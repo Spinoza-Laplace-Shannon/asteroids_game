@@ -4,6 +4,9 @@ from constants import (
     LINE_WIDTH,
     PLAYER_TURN_SPEED,
     PLAYER_SPEED,
+    PLAYER_ACCELERATION,
+    PLAYER_FRICTION,
+    PLAYER_MAX_SPEED,
     PLAYER_SHOOT_SPEED,
     PLAYER_SHOOT_COOLDOWN_SECONDS,
 )
@@ -47,9 +50,13 @@ class Player(CircleShape):
         # Thrust
         thrust_vector = pygame.Vector2(0, 0)
         if keys[pygame.K_w]:
-            thrust_vector = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_ACCELERATION
+            thrust_vector = (
+                pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_ACCELERATION
+            )
         if keys[pygame.K_s]:
-            thrust_vector = pygame.Vector2(0, -1).rotate(self.rotation) * PLAYER_ACCELERATION
+            thrust_vector = (
+                pygame.Vector2(0, -1).rotate(self.rotation) * PLAYER_ACCELERATION
+            )
 
         self.acceleration = thrust_vector
         self.velocity += self.acceleration * dt
