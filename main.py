@@ -22,6 +22,7 @@ def main():
     score = 0
     lives = PLAYER_LIVES
     invulnerable_timer = 0
+    respawn_timer = 0
     font = pygame.font.Font(None, 30)
 
     # Groups:
@@ -62,11 +63,29 @@ def main():
             invul_text = font.render("INVULNERABLE", True, pygame.Color("yellow"))
             screen.blit(invul_text, (10, 70))
 
+        if respawn_timer > 0:
+            respawn_text = font.render(
+                f"RESPAWNING... {respawn_timer:.1f}s", True, pygame.Color("cyan")
+            )
+            screen.blit(respawn_text, (10, 100))
+
         for object in drawable:
+            if isinstance(object, Player) and not player.active:
+                continue
             object.draw(screen)
+
+        # Handle respawn timer and player active state
+        if respawn_timer > 0:
+            respawn_timer = max(0, respawn_timer - dt)
+            player.active = False
+            if respawn_timer == 0:
+                player.active = True
+                invulnerable_timer = PLAYER_RESPAWN_INVULNERABLE_SECONDS
+
         for object in updatable:
             object.update(dt)
-        if invulnerable_timer <= 0:
+
+        if respawn_timer <= 0 and invulnerable_timer <= 0:
             for asteroid in list(asteroids):
                 if player.collides_with(asteroid):
                     lives -= 1
