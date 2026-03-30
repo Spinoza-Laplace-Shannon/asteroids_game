@@ -278,49 +278,60 @@ def main():
             expired_text = font.render("Shield Expired", True, pygame.Color("red"))
             screen.blit(expired_text, (SCREEN_WIDTH // 2 - 90, 60))
 
-        # Handle respawn timer and player active state
+        # ====== RESPAWN TIMER LOGIC ======
+        # When player dies, they're invisible for 1 second before appearing
+        # This prevents them from instantly dying again
         if respawn_timer > 0:
-            respawn_timer = max(0, respawn_timer - dt)
-            player.active = False
-            if respawn_timer == 0:
-                player.active = True
-                invulnerable_timer = PLAYER_RESPAWN_INVULNERABLE_SECONDS
+            respawn_timer = max(0, respawn_timer - dt)  # Count down timer
+            player.active = False  # Make player invisible/inactive
+            if respawn_timer == 0:  # When timer runs out:
+                player.active = True  # Player becomes visible again
+                invulnerable_timer = PLAYER_RESPAWN_INVULNERABLE_SECONDS  # Grant invulnerability
 
-        # Power-up spawn timer
-        powerup_spawn_timer += dt
+        # ====== POWER-UP SPAWNING ======
+        # Spawn a new power-up (green shield) every 10 seconds
+        powerup_spawn_timer += dt  # Add elapsed time since last frame
         if powerup_spawn_timer >= POWERUP_SPAWN_RATE_SECONDS:
-            powerup_spawn_timer = 0
+            powerup_spawn_timer = 0  # Reset timer
+            # Pick random position on screen (not too close to edges)
             x = random.uniform(100, SCREEN_WIDTH - 100)
             y = random.uniform(100, SCREEN_HEIGHT - 100)
-            PowerUp(x, y)
+            PowerUp(x, y)  # Create the power-up
             shield_ready_timer = 2.0
 
+        # ====== UPDATE ALL GAME OBJECTS ======
+        # Call update() on every sprite (player, asteroids, bullets, etc.)
         for object in updatable:
-            object.update(dt)
+            object.update(dt)  # dt = how much time passed since last frame
 
-        # Player catches power-up
+        # ====== COLLISION: PLAYER CATCHES POWER-UP ======
+        # Check if player touches any power-up
         for powerup in list(powerups):
             if player.collides_with(powerup):
-                powerup.kill()
-                player.shield_active = True
-                player.shield_timer = SHIELD_DURATION_SECONDS
+                powerup.kill()  # Remove power-up from game
+                player.shield_active = True  # Activate player's shield
+                player.shield_timer = SHIELD_DURATION_SECONDS  # Start shield countdown
                 player.shield_expired = False
-                pickup_sound.play()
+                pickup_sound.play()  # Play success sound
                 log_event("shield_picked", shield_timer=player.shield_timer)
 
-        # shield expired effect
+        # ====== SHIELD EXPIRATION EFFECT ======
+        # Play sound when shield runs out
         if hasattr(player, "shield_expired") and player.shield_expired:
-            shield_expire_sound.play()
-            shield_expire_text_timer = SHIELD_EXPIRE_TEXT_DURATION
+            shield_expire_sound.play()  # Play expiration sound
+            shield_expire_text_timer = SHIELD_EXPIRE_TEXT_DURATION  # Show message
             player.shield_expired = False
 
+        # ====== COLLISION: PLAYER VS ASTEROIDS ======
+        # Only check collisions if player is not respawning and not invulnerable
         if respawn_timer <= 0 and invulnerable_timer <= 0:
             for asteroid in list(asteroids):
                 if player.collides_with(asteroid):
+                    # CASE 1: Player has shield
                     if player.shield_active:
-                        player.shield_active = False
+                        player.shield_active = False  # Deactivate shield
                         player.shield_timer = 0
-                        block_sound.play()
+                        block_sound.play()  # Play block sound
                         log_event(
                             "shield_block",
                             asteroid_pos=[
@@ -328,10 +339,11 @@ def main():
                                 round(asteroid.position.y, 2),
                             ],
                         )
-                        asteroid.split()
-                        continue
+                        asteroid.split()  # Destroy the asteroid
+                        continue  # Skip the damage code below
 
-                    lives -= 1
+                    # CASE 2: Player doesn't have shield - TAKE DAMAGE
+                    lives -= 1  # Decrease lives by 1
                     log_event(
                         "player_hit",
                         lives=lives,
@@ -345,6 +357,7 @@ def main():
                         ],
                     )
 
+                    # Check if player died (0 lives left)
                     if lives <= 0:
                         print("Game over!")
                         # Save high score if current score is better
@@ -371,17 +384,24 @@ def main():
         if shield_expire_text_timer > 0:
             shield_expire_text_timer = max(0, shield_expire_text_timer - dt)
 
+        # ====== COLLISION: SHOTS (BULLETS) VS ASTEROIDS ======
+        # Check every combination of shots and asteroids
         for asteroid in list(asteroids):
             for shot in list(shots):
                 if asteroid.collides_with(shot):
+                    # Determine points based on asteroid size
+                    # (Smaller asteroids = more points as reward for difficulty)
                     if asteroid.radius <= ASTEROID_MIN_RADIUS:
+                        # Small asteroid = 100 points (hardest to hit)
                         points = SCORE_SMALL_ASTEROID
                     elif asteroid.radius <= ASTEROID_MIN_RADIUS * 2:
+                        # Medium asteroid = 50 points (medium difficulty)
                         points = SCORE_MEDIUM_ASTEROID
                     else:
+                        # Large asteroid = 20 points (easiest to hit)
                         points = SCORE_LARGE_ASTEROID
 
-                    score += points
+                    score += points  # Add points to player's score
 
                     log_event(
                         "asteroid_shot",
@@ -390,11 +410,11 @@ def main():
                         asteroid_radius=asteroid.radius,
                     )
 
-                    # Add explosion effect when asteroid is hit
+                    # Add explosion effect (visual feedback)
                     Explosion(asteroid.position.x, asteroid.position.y)
 
-                    shot.kill()
-                    asteroid.split()
+                    shot.kill()  # Remove the bullet from game
+                    asteroid.split()  # Split asteroid into smaller pieces (or remove if smallest)
 
         # Handle bomb explosions
         for bomb in list(bombs):

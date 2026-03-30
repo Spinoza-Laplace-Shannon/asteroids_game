@@ -60,34 +60,70 @@ class CircleShape(pygame.sprite.Sprite):
         Uses circle collision detection:
         - If distance between centers < sum of radii, they collide!
 
+        EXAMPLE:
+        - Player radius = 20 pixels
+        - Asteroid radius = 30 pixels
+        - Player at (100, 100), Asteroid at (140, 100)
+        - Distance = 40 pixels
+        - Sum of radii = 20 + 30 = 50 pixels
+        - 40 < 50 → COLLISION! ✓
+        
+        VERSUS:
+        - If Asteroid was at (160, 100)
+        - Distance = 60 pixels
+        - 60 > 50 → NO COLLISION ✗
+        
         Args:
         - other: Another CircleShape object to check collision with
-
+        
         Returns:
         - True if colliding, False otherwise
         """
         # Calculate distance between this object's center and other's center
+        # distance_to() is a built-in Pygame method
         distance = self.position.distance_to(other.position)
-
+        
         # If distance is less than both radii combined, they touch!
+        # self.radius = how big THIS object is
+        # other.radius = how big THE OTHER object is
         return distance < self.radius + other.radius
 
     def wrap(self):
         """Make object reappear on opposite side of screen when it goes off-screen
-
+        
         This creates a toroidal (donut-shaped) world like in classic Asteroids.
         Objects on left edge appear on right edge, top appears on bottom, etc.
+        
+        VISUAL EXAMPLE:
+        
+        When object goes off LEFT (x < 0):
+        ┌─────────────[SCREEN]─────────────┐
+        │                                   │
+        │                              ●    │ ← Reappears here!
+        │                                   │
+        └─────────────────────────────────┘
+        
+        When object comes back from LEFT:
+        ┌─────────────[SCREEN]─────────────┐
+        │  ●                                │ ← Goes off here
+        │                                   │
+        │                                   │
+        └─────────────────────────────────┘
         """
-        # Check LEFT EDGE
+        # Check LEFT EDGE - if object goes too far left
         if self.position.x < 0:
-            self.position.x = SCREEN_WIDTH  # Wrap to right
-        # Check RIGHT EDGE
+            # Teleport to right side of screen
+            self.position.x = SCREEN_WIDTH
+        # Check RIGHT EDGE - if object goes too far right
         elif self.position.x > SCREEN_WIDTH:
-            self.position.x = 0  # Wrap to left
+            # Teleport to left side of screen
+            self.position.x = 0
 
-        # Check TOP EDGE
+        # Check TOP EDGE - if object goes too far up
         if self.position.y < 0:
-            self.position.y = SCREEN_HEIGHT  # Wrap to bottom
-        # Check BOTTOM EDGE
+            # Teleport to bottom of screen
+            self.position.y = SCREEN_HEIGHT
+        # Check BOTTOM EDGE - if object goes too far down
         elif self.position.y > SCREEN_HEIGHT:
-            self.position.y = 0  # Wrap to top
+            # Teleport to top of screen
+            self.position.y = 0

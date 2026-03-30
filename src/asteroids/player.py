@@ -55,20 +55,69 @@ class Player(CircleShape):
         self.bomb_cooldown_timer = 0  # Count down until next bomb allowed
 
     def triangle(self):
+        """Calculate the 3 points that make up the visible ship triangle
+        
+        The ship is drawn as a triangle pointing in the direction of rotation.
+        We need to calculate where the 3 corners of this triangle are.
+        
+        VISUAL EXPLANATION (when rotation = 0, ship points UP):
+        
+                    a (nose/front)
+                    *
+                   / \\
+                  /   \\
+              b *-------* c (back corners)
+              (left)  (right)
+        
+        The math:
+        - "forward" = direction the ship is pointing
+        - "right" = perpendicular direction (90 degrees from forward)
+        - We multiply these by the radius to get the three points
+        
+        When the player rotates:
+        - self.rotation changes (0 to 360 degrees)
+        - forward vector rotates with .rotate(self.rotation)
+        - This makes the triangle rotate too!
+        """
+        # Create a vector pointing UP (0, 1), then rotate it by current rotation angle
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
+        
+        # Create a vector pointing RIGHT (perpendicular to forward)
+        # 90 degrees is quarter turn from forward
         right = pygame.Vector2(0, 1).rotate(self.rotation + 90) * self.radius / 1.5
+        
+        # Calculate the three corner points:
+        # a = front of ship (nose)
         a = self.position + forward * self.radius
+        # b = back-left corner
         b = self.position - forward * self.radius - right
+        # c = back-right corner
         c = self.position - forward * self.radius + right
+        
         return [a, b, c]
 
     def hit_triangle(self):
+        """Calculate the collision detection triangle (may be smaller than visual)
+        
+        This is like triangle() but SMALLER for more precise collision detection.
+        We use PLAYER_HITBOX_SCALE (usually 0.9 = 90%) to make hitbox 90% of visual size.
+        
+        WHY? Because collision is more forgiving to the player this way.
+        Players expect bullets to hit them only if they REALLY touch the ship.
+        A smaller hitbox makes the game feel more fair.
+        """
+        # Scale factor (0.9 = 90%)
         scale = PLAYER_HITBOX_SCALE
+        
+        # Same calculation as triangle(), but multiply each point by scale
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
         right = pygame.Vector2(0, 1).rotate(self.rotation + 90) * self.radius / 1.5
+        
+        # Scale all the points down
         a = self.position + forward * self.radius * scale
         b = self.position - forward * self.radius * scale - right * scale
         c = self.position - forward * self.radius * scale + right * scale
+        
         return [a, b, c]
 
     def draw(self, screen):
