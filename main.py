@@ -114,7 +114,7 @@ def main():
             object.draw(screen)
 
         if debug_draw_hitbox and player.active:
-            pygame.draw.polygon(screen, pygame.Color("yellow"), player.triangle(), 1)
+            pygame.draw.polygon(screen, pygame.Color("yellow"), player.hit_triangle(), 1)
 
         # Handle respawn timer and player active state
         if respawn_timer > 0:

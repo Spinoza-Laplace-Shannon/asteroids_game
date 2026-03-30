@@ -37,6 +37,9 @@ WEAPON_COLOR_SINGLE = (255, 255, 255)
 WEAPON_COLOR_SPREAD = (0, 255, 0)
 WEAPON_COLOR_RAPID = (255, 0, 0)
 
+# Player hitbox tuning
+PLAYER_HITBOX_SCALE = 0.9
+
 # Player lives
 PLAYER_LIVES = 3
 PLAYER_RESPAWN_DELAY_SECONDS = 1.0  # pause before reactivating

@@ -15,6 +15,7 @@ from constants import (
     WEAPON_COLOR_SINGLE,
     WEAPON_COLOR_SPREAD,
     WEAPON_COLOR_RAPID,
+    PLAYER_HITBOX_SCALE,
 )
 from circleshape import CircleShape
 from shot import Shot
@@ -37,6 +38,15 @@ class Player(CircleShape):
         a = self.position + forward * self.radius
         b = self.position - forward * self.radius - right
         c = self.position - forward * self.radius + right
+        return [a, b, c]
+
+    def hit_triangle(self):
+        scale = PLAYER_HITBOX_SCALE
+        forward = pygame.Vector2(0, 1).rotate(self.rotation)
+        right = pygame.Vector2(0, 1).rotate(self.rotation + 90) * self.radius / 1.5
+        a = self.position + forward * self.radius * scale
+        b = self.position - forward * self.radius * scale - right * scale
+        c = self.position - forward * self.radius * scale + right * scale
         return [a, b, c]
 
     def draw(self, screen):
@@ -120,7 +130,7 @@ class Player(CircleShape):
     def collides_with(self, other):
         # triangular hitbox for player
         if isinstance(other, CircleShape):
-            tri = self.triangle()
+            tri = self.hit_triangle()
             # check if circle center is inside triangle
             if self.__point_in_triangle(
                 other.position,
