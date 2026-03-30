@@ -359,11 +359,57 @@ def main():
 
                     # Check if player died (0 lives left)
                     if lives <= 0:
-                        print("Game over!")
-                        # Save high score if current score is better
-                        if score > menu.high_score:
+                        # Save high score if the player beat their personal best
+                        is_new_high = score > menu.high_score
+                        if is_new_high:
                             menu.save_high_score(score)
-                        exit()
+
+                        # ── Show Game Over screen ─────────────────────────────
+                        # Player chooses TRY AGAIN or EXIT with arrow keys + Enter
+                        go_selected = 0      # 0 = "TRY AGAIN", 1 = "EXIT"
+                        chose_restart = False
+                        while True:
+                            result = menu.handle_game_over_input(go_selected)
+                            if result == "restart":
+                                chose_restart = True
+                                break
+                            elif result == "quit":
+                                return   # Close game immediately
+                            elif isinstance(result, tuple) and result[0] == "move":
+                                go_selected = result[1]   # Move cursor up/down
+                            menu.draw_game_over(screen, score, is_new_high, go_selected)
+                            pygame.display.flip()
+                            clock.tick(60)
+
+                        if not chose_restart:
+                            return   # Player chose EXIT
+
+                        # ── TRY AGAIN: reset all game state in place ──────────
+                        score = 0
+                        lives = PLAYER_LIVES
+                        invulnerable_timer = 0
+                        respawn_timer = 0
+                        paused = False
+                        pause_selected = 0
+                        powerup_spawn_timer = 0.0
+                        shield_ready_timer = 0.0
+                        shield_expire_text_timer = 0.0
+
+                        # Remove every old sprite from the game
+                        for s in list(updatable):
+                            s.kill()
+                        updatable.empty()
+                        drawable.empty()
+                        asteroids.empty()
+                        shots.empty()
+                        powerups.empty()
+                        bombs.empty()
+
+                        # Recreate field and player (they register themselves to
+                        # the sprite groups automatically via their containers)
+                        asteroid_field = AsteroidField()
+                        player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+                        break   # exit the 'for asteroid' loop → game resumes next frame
 
                     # Respawn player in center and reset velocity
                     player.position = pygame.Vector2(

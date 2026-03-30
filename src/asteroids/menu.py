@@ -267,3 +267,91 @@ class Menu:
             back_text,
             (SCREEN_WIDTH // 2 - back_text.get_width() // 2, SCREEN_HEIGHT - 50),
         )
+
+    # -------------------------------------------------------------------------
+    # GAME OVER SCREEN
+    # -------------------------------------------------------------------------
+
+    def handle_game_over_input(self, selected):
+        """Handle keyboard input on the Game Over screen.
+
+        Returns:
+        - "restart"  → player chose Try Again
+        - "quit"     → player chose Exit (or closed window)
+        - ("move", new_selected) → player moved the cursor
+        - None       → nothing happened this frame
+        """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "quit"
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_UP, pygame.K_DOWN):
+                    if self.menu_nav_sound:
+                        self.menu_nav_sound.play()
+                    return ("move", 1 - selected)   # Toggle between 0 and 1
+                if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    return "restart" if selected == 0 else "quit"
+                if event.key == pygame.K_ESCAPE:
+                    return "quit"
+        return None
+
+    def draw_game_over(self, screen, score, is_new_high, selected):
+        """Draw the Game Over screen.
+
+        Layout:
+          GAME OVER!          ← big red title
+          Score: 1250         ← current score in white
+          NEW HIGH SCORE!     ← cyan badge (only when record broken)
+          Best: 1250          ← updated high score
+          > TRY AGAIN         ← option 0  (yellow when selected)
+            EXIT              ← option 1
+        """
+        screen.fill("black")
+
+        # ── Title ──────────────────────────────────────────────────────────
+        font_title = pygame.font.Font(None, 90)
+        title = font_title.render("GAME OVER!", True, pygame.Color("red"))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 80))
+
+        # ── Score ──────────────────────────────────────────────────────────
+        score_text = self.font_medium.render(
+            f"Score: {score}", True, pygame.Color("white")
+        )
+        screen.blit(
+            score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, 200)
+        )
+
+        # ── New High Score badge ───────────────────────────────────────────
+        y_badge = 260
+        if is_new_high:
+            badge = self.font_medium.render(
+                "NEW HIGH SCORE!", True, pygame.Color("cyan")
+            )
+            screen.blit(badge, (SCREEN_WIDTH // 2 - badge.get_width() // 2, y_badge))
+            y_badge += 50
+
+        hs_text = self.font_small.render(
+            f"Best: {self.high_score}", True, pygame.Color("lightgray")
+        )
+        screen.blit(
+            hs_text, (SCREEN_WIDTH // 2 - hs_text.get_width() // 2, y_badge)
+        )
+
+        # ── Menu options ──────────────────────────────────────────────────
+        options = ["TRY AGAIN", "EXIT"]
+        y_options = 380
+        for i, option in enumerate(options):
+            color = pygame.Color("yellow") if i == selected else pygame.Color("white")
+            text = self.font_medium.render(option, True, color)
+            x = SCREEN_WIDTH // 2 - text.get_width() // 2
+            screen.blit(text, (x, y_options + i * 70))
+            if i == selected:
+                arrow = self.font_medium.render(">", True, pygame.Color("yellow"))
+                screen.blit(arrow, (x - 50, y_options + i * 70))
+                screen.blit(arrow, (x + text.get_width() + 14, y_options + i * 70))
+
+        # ── Hint ──────────────────────────────────────────────────────────
+        hint = self.font_small.render(
+            "UP/DOWN to choose, ENTER to confirm", True, pygame.Color("gray")
+        )
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
