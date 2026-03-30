@@ -289,7 +289,7 @@ class Player(CircleShape):
         if self.bomb_cooldown_timer > 0:
             return None
 
-        from bomb import Bomb
+        from .bomb import Bomb
 
         self.bomb_cooldown_timer = BOMB_COOLDOWN_SECONDS
         bomb = Bomb(self.position.x, self.position.y, self.velocity.copy())
