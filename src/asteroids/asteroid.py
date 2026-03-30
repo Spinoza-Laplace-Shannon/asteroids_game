@@ -8,7 +8,7 @@ from .circleshape import CircleShape
 
 # ============================================================================
 # The Asteroid class represents floating rocks in space that the player must
-# destroy. Asteroids have randombumpy shapes and split into smaller pieces
+# destroy. Asteroids have random bumpy shapes and split into smaller pieces
 # when shot.
 # ============================================================================
 class Asteroid(CircleShape):
@@ -70,6 +70,27 @@ class Asteroid(CircleShape):
                            308°
         
         Each offset multiplies the radius (e.g., 1.2x makes point stick out more)
+
+                POLAR -> CARTESIAN IDEA:
+
+                We first think in circular terms:
+                - angle = where around the asteroid we are
+                - distance = how far from the center this vertex sits
+
+                Then we convert that into normal screen coordinates:
+
+                                 y
+                                 ^
+                                 |
+                                 |      point
+                                 |     *
+                                 |   / |
+                                 | /   |
+                                 C-----+----> x
+                             center
+
+                In code, pygame.Vector2(...).rotate(angle) gives us the direction.
+                Multiplying by distance gives the final "step" from the center.
         """
         # CALCULATE POLYGON POINTS - Generate the bumpy shape
         points = []
@@ -111,13 +132,13 @@ class Asteroid(CircleShape):
         # Creates the illusion of 3D by adding a light gray shadow
         # Strategy: Draw on a transparent surface first, then place on screen
         # This lets us use "alpha" (transparency) which pygame.draw.polygon doesn't support
-        
+
         # Create a transparent surface (SRCALPHA = supports alpha transparency)
         # Size = diameter of asteroid + 4 extra pixels for safety
         surface = pygame.Surface(
             (self.radius * 2 + 4, self.radius * 2 + 4), pygame.SRCALPHA
         )
-        
+
         # Adjust points to surface coordinate system
         # Why? The surface has its own (0,0) coordinate system
         # We need to translate points from world coordinates to surface coordinates
@@ -129,7 +150,7 @@ class Asteroid(CircleShape):
             )
             for p in points
         ]
-        
+
         # Draw the overlay polygon with light gray (200,200,200) and 120 alpha (47% opaque)
         # Alpha values:
         #   0 = completely transparent (invisible)
@@ -137,7 +158,7 @@ class Asteroid(CircleShape):
         #   255 = completely opaque (solid)
         # 120 alpha ≈ 47% opaque means you can see the dark layer through it
         pygame.draw.polygon(surface, (*self.color_outer, 120), offset_points)
-        
+
         # "Blit" = copy the transparent surface onto the main screen
         # It blends with what's already there because of the alpha channel
         screen.blit(
@@ -154,27 +175,40 @@ class Asteroid(CircleShape):
 
     def split(self):
         """When shot, break this asteroid into two smaller pieces
-        
+
         SPLITTING LOGIC:
         ================
         When the player shoots an asteroid, it doesn't just disappear.
         It splits into TWO SMALLER asteroids that spread apart!
-        
+
         SIZE PROGRESSION:
         - Large asteroid (radius=40) → splits to 2 Medium (radius=30 each)
         - Medium asteroid (radius=30) → splits to 2 Small (radius=20 each)
         - Small asteroid (radius=20) → destroyed (too small to split further)
-        
+
         VELOCITY CALCULATION:
         The velocity vectors spread the chunks apart using rotation:
-        
+
         Original velocity: going RIGHT
         ↓
         After rotation:     ↙ CHUNK 1    (rotated +35°, faster)
         ↓                   ↘ CHUNK 2    (rotated -35°, faster)
-        
+
         The 1.2x multiplier makes chunks faster than parent
         This creates action-packed visual when asteroids explode
+
+                ASCII VECTOR DIAGRAM:
+
+                                         chunk 1
+                                             \
+                                                \
+                        old velocity --->
+                                                /
+                                             /
+                                         chunk 2
+
+                Both new chunks start from the same place, but their velocity vectors
+                are rotated in opposite directions, so they spread apart visually.
         """
         # Step 1: Remove this asteroid from game
         self.kill()
@@ -196,7 +230,7 @@ class Asteroid(CircleShape):
         # EXAMPLE: if original velocity = (40, 0) pointing right at angle 0°
         #          then rotate 35° clockwise + 1.2x speed = pointing upper-right faster
         first_velocity = self.velocity.rotate(angle) * 1.2
-        
+
         # Second piece: rotate velocity counter-clockwise (negative angle), speed it up by 20%
         # Going opposite direction from first chunk
         second_velocity = self.velocity.rotate(-angle) * 1.2
@@ -269,8 +303,8 @@ class Explosion(CircleShape):
         and immediately begins expanding outward.
         """
         super().__init__(x, y, 0)  # Start with radius=0 (invisible point)
-        self.life = 0.5        # Total lifespan in seconds (half a second)
-        self.growth_rate = 240 # Expansion speed: 240 pixels per second
+        self.life = 0.5  # Total lifespan in seconds (half a second)
+        self.growth_rate = 240  # Expansion speed: 240 pixels per second
         # Why 240? At 0.5s lifespan: final radius = 240 * 0.5 = 120 pixels
         # Large enough to be visible, small enough to not dominate the screen
 
@@ -361,10 +395,13 @@ class Explosion(CircleShape):
         # EXAMPLE: (255, 180, 0) + (178,) = (255, 180, 0, 178)  ← RGBA
         pygame.draw.circle(
             surface,
-            color + (alpha,),                                # RGBA color with transparency
-            (int(self.radius + 1), int(self.radius + 1)),   # Center on the surface (+1 padding)
-            int(self.radius),                               # Radius of the ring
-            2,                                              # Ring thickness = 2 pixels
+            color + (alpha,),  # RGBA color with transparency
+            (
+                int(self.radius + 1),
+                int(self.radius + 1),
+            ),  # Center on the surface (+1 padding)
+            int(self.radius),  # Radius of the ring
+            2,  # Ring thickness = 2 pixels
         )
 
         # ===== STEP 5: COPY (BLIT) SURFACE ONTO MAIN SCREEN =====

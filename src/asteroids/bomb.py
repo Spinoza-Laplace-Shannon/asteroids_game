@@ -26,13 +26,13 @@ class Bomb(CircleShape):
 
     def draw(self, screen):
         """Draw the bomb as orange circle with yellow fuse indicator
-        
+
         VISUAL DESIGN:
         ==============
         The fuse indicator shows remaining time VISUALLY
         Instead of displaying a number, the yellow circle SHRINKS
         as time runs out. When yellow circle is gone → BOOM!
-        
+
         FUSE VISUAL PROGRESSION (2 second fuse):
         ┌─────────────────────────────────────────┐
         │ t=2.0s: ●●●●●●● (full yellow circle)   │
@@ -41,8 +41,25 @@ class Bomb(CircleShape):
         │ t=0.5s: ●       (tiny)                 │
         │ t=0.0s: (gone)   → EXPLOSION!          │
         └─────────────────────────────────────────┘
-        
+
         This gives player immediate visual feedback of danger!
+
+                LAYER IDEA:
+
+                        outer orange circle = bomb body
+                        inner yellow circle = remaining fuse
+
+                                *********
+                            **  OOO  **
+                         *   OOOOO   *
+                         *   OOOOO   *
+                            **  OOO  **
+                                *********
+
+                        * = orange outline/body
+                        O = yellow fuse indicator
+
+                As time decreases, the yellow inner part shrinks toward zero.
         """
         # ===== LAYER 1: DRAW BOMB BODY =====
         # Orange circle with thin outline
@@ -51,8 +68,8 @@ class Bomb(CircleShape):
             screen,
             (255, 100, 0),  # RGB: Orange
             (self.position.x, self.position.y),
-            self.radius,    # 5 pixels (from constants.py)
-            LINE_WIDTH,     # Usually 2 pixels (outline thickness)
+            self.radius,  # 5 pixels (from constants.py)
+            LINE_WIDTH,  # Usually 2 pixels (outline thickness)
         )
 
         # ===== LAYER 2: DRAW FUSE INDICATOR =====
@@ -67,7 +84,11 @@ class Bomb(CircleShape):
         # EXAMPLE: fuse_time = 1.0, radius = 5
         #   fuse_ratio = 1.0 / 2.0 = 0.5 (50% time elapsed)
         #   inner_radius = 0.6 * 5 * 0.5 = 1.5 pixels
-        
+
+        # Ratio of fuse remaining:
+        #   start -> 2.0/2.0 = 1.0
+        #   half  -> 1.0/2.0 = 0.5
+        #   end   -> 0.0/2.0 = 0.0
         fuse_ratio = max(0, self.fuse_time / 2.0)  # Clamp to minimum 0
         inner_radius = int(self.radius * 0.6 * fuse_ratio)  # Convert to integer
 
@@ -84,7 +105,7 @@ class Bomb(CircleShape):
 
     def update(self, dt):
         """Update bomb: move it, count down fuse, and explode when ready
-        
+
         COUNTDOWN LOGIC:
         ================
         This method handles the complete bomb lifecycle:
@@ -92,13 +113,25 @@ class Bomb(CircleShape):
         2. Count down fuse timer
         3. Detect when fuse reaches zero
         4. Mark as exploded (main.py handles actual explosion)
-        
+
         TIMELINE EXAMPLE:
         t=2.0s: Bomb spawned, fuse_time=2.0, yellow indicator full
         t=1.5s: fuse_time=1.5 (dt added 0.5 seconds)
         t=1.0s: fuse_time=1.0 (halfway to explosion)
         t=0.5s: fuse_time=0.5 (about to explode!)
         t=0.0s: fuse_time≤0 → Set exploded=True (handoff to main.py)
+
+        MOTION + TIMER TOGETHER:
+
+            frame 1: move a little, fuse drops a little
+            frame 2: move a little, fuse drops a little
+            frame 3: move a little, fuse drops a little
+            ...
+            final frame: fuse <= 0 -> exploded = True
+
+        So the bomb is doing TWO jobs at once:
+        - travelling through space
+        - counting down to detonation
         """
         # Step 1: MOVE BOMB
         # Bombs inherit initial velocity from player's ship

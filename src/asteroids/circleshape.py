@@ -67,22 +67,22 @@ class CircleShape(pygame.sprite.Sprite):
         - Distance = 40 pixels
         - Sum of radii = 20 + 30 = 50 pixels
         - 40 < 50 → COLLISION! ✓
-        
+
         VERSUS:
         - If Asteroid was at (160, 100)
         - Distance = 60 pixels
         - 60 > 50 → NO COLLISION ✗
-        
+
         Args:
         - other: Another CircleShape object to check collision with
-        
+
         Returns:
         - True if colliding, False otherwise
         """
         # Calculate distance between this object's center and other's center
         # distance_to() is a built-in Pygame method
         distance = self.position.distance_to(other.position)
-        
+
         # If distance is less than both radii combined, they touch!
         # self.radius = how big THIS object is
         # other.radius = how big THE OTHER object is
@@ -90,19 +90,19 @@ class CircleShape(pygame.sprite.Sprite):
 
     def wrap(self):
         """Make object reappear on opposite side of screen when it goes off-screen
-        
+
         This creates a toroidal (donut-shaped) world like in classic Asteroids.
         Objects on left edge appear on right edge, top appears on bottom, etc.
-        
+
         VISUAL EXAMPLE:
-        
+
         When object goes off LEFT (x < 0):
         ┌─────────────[SCREEN]─────────────┐
         │                                   │
         │                              ●    │ ← Reappears here!
         │                                   │
         └─────────────────────────────────┘
-        
+
         When object comes back from LEFT:
         ┌─────────────[SCREEN]─────────────┐
         │  ●                                │ ← Goes off here

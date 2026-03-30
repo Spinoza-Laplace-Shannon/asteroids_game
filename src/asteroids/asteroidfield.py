@@ -16,6 +16,16 @@ class AsteroidField(pygame.sprite.Sprite):
     - When time exceeds ASTEROID_SPAWN_RATE_SECONDS, spawn one
     - Asteroids appear from random edges with random speeds
     - Creates feeling of never-ending waves
+
+    BIG IDEA:
+    This object is like an invisible "teacher behind the curtain".
+    The player never sees the spawner itself, only the asteroids it creates.
+
+    SPAWN CYCLE:
+
+        timer grows ---> reaches threshold ---> create asteroid ---> reset timer
+
+    Then the cycle starts again.
     """
 
     # EDGES - Where asteroids can spawn from (4 edges of screen)
@@ -38,7 +48,7 @@ class AsteroidField(pygame.sprite.Sprite):
     # │  ↑ ↑ ↑ ↑ ↑ ↑ ↑                      │
     # │ BOTTOM EDGE (y=600) ←──── Asteroids │
     # └─────────────────────────────────────┘
-    
+
     edges = [
         # ===== LEFT EDGE =====
         # Asteroids come FROM left side, moving RIGHT into the screen
@@ -49,10 +59,9 @@ class AsteroidField(pygame.sprite.Sprite):
             # EXAMPLE: if y=0.5 → spawn at (y * 600) = 300 pixels down
             lambda y: pygame.Vector2(
                 -ASTEROID_MAX_RADIUS,  # x position: off-screen left (negative x)
-                y * SCREEN_HEIGHT       # y position: random height
+                y * SCREEN_HEIGHT,  # y position: random height
             ),
         ],
-        
         # ===== RIGHT EDGE =====
         # Asteroids come FROM right side, moving LEFT into the screen
         [
@@ -60,10 +69,9 @@ class AsteroidField(pygame.sprite.Sprite):
             # Lambda: Place asteroid off-screen right
             lambda y: pygame.Vector2(
                 SCREEN_WIDTH + ASTEROID_MAX_RADIUS,  # x position: off-screen right
-                y * SCREEN_HEIGHT                     # y position: random height
+                y * SCREEN_HEIGHT,  # y position: random height
             ),
         ],
-        
         # ===== TOP EDGE =====
         # Asteroids come FROM top, moving DOWN into the screen
         [
@@ -71,19 +79,18 @@ class AsteroidField(pygame.sprite.Sprite):
             # Lambda: Place asteroid off-screen top at random horizontal position
             # x=0 → left side, x=1 → right side
             lambda x: pygame.Vector2(
-                x * SCREEN_WIDTH,            # x position: random width
-                -ASTEROID_MAX_RADIUS         # y position: off-screen top (negative y)
+                x * SCREEN_WIDTH,  # x position: random width
+                -ASTEROID_MAX_RADIUS,  # y position: off-screen top (negative y)
             ),
         ],
-        
         # ===== BOTTOM EDGE =====
         # Asteroids come FROM bottom, moving UP into the screen
         [
             pygame.Vector2(0, -1),  # Direction: up (0,-1) means y decreases
             # Lambda: Place asteroid off-screen bottom
             lambda x: pygame.Vector2(
-                x * SCREEN_WIDTH,                    # x position: random width
-                SCREEN_HEIGHT + ASTEROID_MAX_RADIUS  # y position: off-screen bottom
+                x * SCREEN_WIDTH,  # x position: random width
+                SCREEN_HEIGHT + ASTEROID_MAX_RADIUS,  # y position: off-screen bottom
             ),
         ],
     ]
@@ -94,28 +101,71 @@ class AsteroidField(pygame.sprite.Sprite):
         self.spawn_timer = 0.0  # Count up until time to spawn
 
     def spawn(self, radius, position, velocity):
-        """Create a new asteroid at given position with given velocity"""
+        """Create one asteroid with a chosen size, position, and velocity.
+
+        PARAMETERS:
+        - radius   = size of the asteroid
+        - position = where it appears
+        - velocity = how it starts moving immediately
+
+        In physics terms, position answers "where?" and velocity answers
+        "in which direction and how fast?"
+        """
         asteroid = Asteroid(position.x, position.y, radius)
         asteroid.velocity = velocity
 
     def update(self, dt):
         """Update spawner: count down timer and spawn when ready
-        
+
         SPAWNING SYSTEM:
         ================
         This spawner creates a continuous stream of asteroids
         It uses a TIMER that counts up until it's time to spawn
-        
+
         CALCULATION FLOW:
         1. Add elapsed time (dt) to spawn_timer
         2. When spawn_timer exceeds threshold, it's time to spawn
         3. Create new asteroid with random properties
         4. Reset timer and repeat
-        
+
         WHY DO THIS?
         - Asteroids don't appear all at once (overwhelming)
         - They spawn continuously at controlled rate
         - Creates escalating difficulty as game progresses
+
+        VISUAL SUMMARY OF ONE SPAWN:
+
+            choose edge
+                |
+                v
+            choose speed
+                |
+                v
+            rotate direction a little
+                |
+                v
+            choose random spot on that edge
+                |
+                v
+            choose size
+                |
+                v
+            create asteroid
+
+        VECTOR EXAMPLE:
+
+            LEFT EDGE spawn
+
+            asteroid starts here off-screen
+                    *
+                    |\
+                    | \
+                    |  \  velocity after small angle rotation
+                    |   \
+                    +-----> base direction into screen
+
+        The small random rotation stops every asteroid from following the
+        exact same straight path.
         """
         # Step 1: COUNT UP TIMER
         # dt = "delta time" = seconds since last update

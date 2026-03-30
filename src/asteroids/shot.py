@@ -1,5 +1,4 @@
 import pygame
-import pygame
 from .circleshape import CircleShape
 from .constants import SHOT_RADIUS, SCREEN_WIDTH, SCREEN_HEIGHT, LINE_WIDTH
 
@@ -34,7 +33,7 @@ class Shot(CircleShape):
 
     def draw(self, screen):
         """Draw shot as a small colored circle
-        
+
         VISUAL REPRESENTATION:
         ======================
         Bullets are tiny circles (usually 2 pixels radius)
@@ -42,31 +41,37 @@ class Shot(CircleShape):
         - White = Standard weapon
         - Green = Rapid fire weapon
         - Red = Spread shot weapon
-        
+
         Small size helps player see where bullets are going
         Different colors distinguish weapon types visually
+
+        VISUAL IDEA:
+
+            ship nose --->   o   o   o
+
+        The bullets are intentionally tiny so they feel fast and precise.
         """
-        # Draw small filled circle at bullet position
-        # Uses weapon-specific color for visual distinction
+        # Draw a tiny outline circle at the bullet position.
+        # Using colour helps the player identify which weapon created the shot.
         pygame.draw.circle(
             screen,
-            self.color,                          # Use weapon-specific color
+            self.color,  # Use weapon-specific color
             (self.position.x, self.position.y),
-            self.radius,                         # Bullet radius (usually 2 px)
-            LINE_WIDTH,                          # Outline thickness
+            self.radius,  # Bullet radius (usually 2 px)
+            LINE_WIDTH,  # Outline thickness
         )
 
     def update(self, dt):
         """Update shot: move it forward and wrap around screen
-        
+
         BULLET PHYSICS:
         ===============
         Bullets travel in a STRAIGHT LINE at CONSTANT VELOCITY
         No acceleration, no drag - just pure physics
-        
+
         TRAJECTORY CALCULATION:
         Each frame: new_position = current_position + (velocity * time_elapsed)
-        
+
         EXAMPLE:
         - Position: (200, 300)
         - Velocity: (300, 0) pixels/second (moving right)
@@ -74,17 +79,27 @@ class Shot(CircleShape):
         - New position: (200, 300) + (300, 0) * 0.0167
         -            = (200, 300) + (5, 0)
         -            = (205, 300)  ← Moves 5 pixels right each frame at 60 FPS
-        
+
         At 60 FPS: Bullet travels 300 pixels per second = 5 pixels per frame
+
+        ASCII VECTOR DIAGRAM:
+
+            current position *-----------> velocity vector
+
+        After one frame:
+
+            new position        *
+
+        MATHEMATICAL RULE:
+
+            new_position = old_position + velocity * dt
+
+        That same rule is used constantly in games for projectiles, enemies,
+        and moving objects in general.
         """
-        # Step 1: MOVE BULLET
-        # Position changes based on velocity and time delta
-        # This makes bullet movement frame-rate independent
-        # (Moves same distance per second regardless of FPS)
+        # Step 1: move the bullet according to its velocity.
+        # dt keeps this independent from frame rate.
         self.position += self.velocity * dt
 
-        # Step 2: WRAP AROUND SCREEN
-        # If bullet goes off one edge, appears from opposite edge
-        # Toroidal wrapping (like Pac-Man, 1980s arcade style)
-        # Allows bullets to wrap around and hit asteroids from behind
+        # Step 2: wrap around screen edges like the classic Asteroids rules.
         self.wrap()

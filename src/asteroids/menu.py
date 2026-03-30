@@ -1,5 +1,4 @@
 import pygame
-import os
 import json
 from pathlib import Path
 from .constants import (
@@ -34,6 +33,25 @@ HIGH_SCORE_FILE = DATA_DIR / "high_score.json"
 #   └──────────────────────────────────────────────────────┘
 #
 # Only one screen is drawn at a time based on self.state.
+#
+# KEYBOARD NAVIGATION MAP:
+#
+#   MAIN MENU
+#   +----------------------+
+#   |  PLAY         <- 0   |
+#   |  TUTORIAL     <- 1   |
+#   |  SETTINGS     <- 2   |
+#   |  QUIT         <- 3   |
+#   +----------------------+
+#        ^           |
+#        |           |
+#        +-- UP/DOWN-+
+#
+#   ENTER / SPACE -> choose current line
+#   ESC           -> go back from sub-screens
+#
+# The cursor never gets "stuck" at the top or bottom because modulo (%)
+# makes the selection wrap around.
 # ============================================================================
 class Menu:
     def __init__(self):
@@ -46,9 +64,9 @@ class Menu:
         # pygame.font.Font(None, size) creates a font using the system default
         # The number is the SIZE in pixels (bigger = larger text on screen)
         # We have three sizes for hierarchy: title > subtitle > body text
-        self.font_large  = pygame.font.Font(None, 60)  # Big headings (e.g. "ASTEROIDS")
+        self.font_large = pygame.font.Font(None, 60)  # Big headings (e.g. "ASTEROIDS")
         self.font_medium = pygame.font.Font(None, 40)  # Menu options (e.g. "PLAY")
-        self.font_small  = pygame.font.Font(None, 30)  # Small labels / hints
+        self.font_small = pygame.font.Font(None, 30)  # Small labels / hints
 
         # ── MENU SELECTION ──────────────────────────────────────────────────
         # self.selected tracks WHICH option the yellow cursor is on
@@ -62,7 +80,7 @@ class Menu:
         # ── STATE MACHINE ───────────────────────────────────────────────────
         # self.state controls WHICH screen is currently visible
         # Starts at "main" (the main menu screen)
-        self.state = "main"   # possible values: 'main', 'settings', 'tutorial'
+        self.state = "main"  # possible values: 'main', 'settings', 'tutorial'
 
         # ── DIFFICULTY ──────────────────────────────────────────────────────
         # Default difficulty (usually "Normal")
@@ -105,9 +123,9 @@ class Menu:
         to the speaker (CD quality standard).
         """
         try:
-            sample_rate = 44100    # Samples per second (CD quality)
-            freq = 1000            # Frequency in Hz (1000 Hz = high beep)
-            duration = 0.1         # Length of beep: 0.1 seconds
+            sample_rate = 44100  # Samples per second (CD quality)
+            freq = 1000  # Frequency in Hz (1000 Hz = high beep)
+            duration = 0.1  # Length of beep: 0.1 seconds
             volume = SOUND_VOLUME_MENU_NAV  # Loudness (0.0 to 1.0)
 
             # Total samples = rate × duration
@@ -137,7 +155,7 @@ class Menu:
             # Hand the raw byte buffer to Pygame so it can play it
             sound = pygame.mixer.Sound(buffer=buf)
             return sound
-        except:
+        except Exception:
             # If anything goes wrong (e.g. audio system not available), just skip sound
             return None
 
@@ -160,13 +178,13 @@ class Menu:
             # .exists() returns True only if the file is actually there
             if HIGH_SCORE_FILE.exists():
                 with open(HIGH_SCORE_FILE, "r") as f:  # "r" = read mode (text)
-                    data = json.load(f)                 # Parse JSON text → Python dict
+                    data = json.load(f)  # Parse JSON text → Python dict
                     # .get("score", 0) reads the "score" key
                     # If the key doesn't exist, return 0 as a safe default
                     return data.get("score", 0)
-        except:
-            pass   # Something went wrong → act as if no high score exists
-        return 0   # Default: no high score yet
+        except Exception:
+            pass  # Something went wrong → act as if no high score exists
+        return 0  # Default: no high score yet
 
     def save_high_score(self, score):
         """Write the new best score to the JSON file on disk.
@@ -182,12 +200,12 @@ class Menu:
             DATA_DIR.mkdir(parents=True, exist_ok=True)
 
             with open(HIGH_SCORE_FILE, "w") as f:  # "w" = write mode (overwrites)
-                json.dump({"score": score}, f)      # Convert dict → JSON text and write
+                json.dump({"score": score}, f)  # Convert dict → JSON text and write
 
             # Update the in-memory value so the UI reflects the new record right away
             self.high_score = score
-        except:
-            pass   # If saving fails (e.g. read-only filesystem), silently ignore
+        except Exception:
+            pass  # If saving fails (e.g. read-only filesystem), silently ignore
 
     def handle_input(self):
         """Process keyboard/mouse events while the menu is on screen.
@@ -205,17 +223,32 @@ class Menu:
         - "play"  → player pressed Enter on PLAY → start the game
         - "quit"  → player closed the window or pressed QUIT
         - None    → nothing significant happened this frame
+
+                NAVIGATION DIAGRAM:
+
+                        UP key              DOWN key
+                             ^                   |
+                             |                   v
+
+                    [ PLAY ]
+                    [ TUTORIAL ]
+                    [ SETTINGS ]
+                    [ QUIT ]
+
+                With wrap-around behaviour:
+                - pressing UP on the first item jumps to the last item
+                - pressing DOWN on the last item jumps to the first item
+
+                That makes menu navigation feel continuous instead of blocked.
         """
         # Drain the event queue – process every pending input this frame
         for event in pygame.event.get():
-
             # ── Player closes the window (clicks the ✕ button) ──────────────
             if event.type == pygame.QUIT:
                 return "quit"
 
             # ── A key was just pressed (not held – only the initial press) ──
             if event.type == pygame.KEYDOWN:
-
                 # ── UP ARROW: move cursor one option higher ─────────────────
                 if event.key == pygame.K_UP:
                     if self.state == "main":
@@ -248,18 +281,18 @@ class Menu:
                     if self.state == "main":
                         # self.selected tells us WHICH option the cursor is on
                         # (matches the order in self.options)
-                        if self.selected == 0:       # "PLAY"
-                            return "play"            # Signal main.py to start the game
-                        elif self.selected == 1:     # "TUTORIAL"
-                            self.state = "tutorial" # Switch to tutorial screen
-                        elif self.selected == 2:     # "SETTINGS"
+                        if self.selected == 0:  # "PLAY"
+                            return "play"  # Signal main.py to start the game
+                        elif self.selected == 1:  # "TUTORIAL"
+                            self.state = "tutorial"  # Switch to tutorial screen
+                        elif self.selected == 2:  # "SETTINGS"
                             self.state = "settings"
                             self.selected = 0
                             # Pre-select the difficulty that's already active
                             self.difficulty_selected = DIFFICULTIES.index(
                                 self.difficulty
                             )
-                        elif self.selected == 3:     # "QUIT"
+                        elif self.selected == 3:  # "QUIT"
                             return "quit"
 
                     elif self.state == "settings":
@@ -267,7 +300,9 @@ class Menu:
                         if self.difficulty_selected < len(DIFFICULTIES):
                             self.difficulty = DIFFICULTIES[self.difficulty_selected]
                         self.state = "main"
-                        self.selected = 2  # Put cursor back on "SETTINGS" for convenience
+                        self.selected = (
+                            2  # Put cursor back on "SETTINGS" for convenience
+                        )
 
                 # ── ESCAPE: go back to main menu from any sub-screen ─────────
                 elif event.key == pygame.K_ESCAPE:
@@ -287,9 +322,9 @@ class Menu:
         Clearing the screen first (fill black) prevents the previous
         frame's image from "bleeding through" onto the new frame.
         """
-        screen.fill("black")          # Erase everything from the previous frame
+        screen.fill("black")  # Erase everything from the previous frame
         if self.state == "main":
-            self.draw_main(screen)    # Draw main menu (PLAY / TUTORIAL / …)
+            self.draw_main(screen)  # Draw main menu (PLAY / TUTORIAL / …)
         elif self.state == "settings":
             self.draw_settings(screen)  # Draw difficulty picker
         elif self.state == "tutorial":
@@ -307,6 +342,20 @@ class Menu:
         EXAMPLE: screen=800px wide, text=200px wide
             x = 800//2 - 200//2 = 400 - 100 = 300
             Text spans pixels 300–500 → centered on pixel 400 ✓
+
+        SCREEN LAYOUT:
+
+            +--------------------------------------+
+            |              ASTEROIDS               |
+            |            Best Score: 1250          |
+            |                                      |
+            |              > PLAY <                |
+            |                TUTORIAL              |
+            |                SETTINGS              |
+            |                QUIT                  |
+            |                                      |
+            |  Use UP/DOWN to select, ENTER...     |
+            +--------------------------------------+
         """
         # ── TITLE ───────────────────────────────────────────────────────────
         # font.render(text, antialias, color) → creates a Surface (image of text)
@@ -325,7 +374,7 @@ class Menu:
         # ── OPTION LIST ─────────────────────────────────────────────────────
         # enumerate(list) gives us both the index i AND the value option
         # EXAMPLE: enumerate(["PLAY","QUIT"]) → (0,"PLAY"), (1,"QUIT")
-        y_offset = 250   # Vertical starting position for the first option
+        y_offset = 250  # Vertical starting position for the first option
         for i, option in enumerate(self.options):
             # Highlight the currently selected option in yellow
             # All others stay white
@@ -344,8 +393,10 @@ class Menu:
             # Draw " > OPTION < " arrows around the selected option
             if i == self.selected:
                 indicator = self.font_medium.render(">", True, pygame.Color("yellow"))
-                screen.blit(indicator, (x - 60, y_offset + i * 80))          # Left arrow
-                screen.blit(indicator, (x + text.get_width() + 20, y_offset + i * 80))  # Right arrow
+                screen.blit(indicator, (x - 60, y_offset + i * 80))  # Left arrow
+                screen.blit(
+                    indicator, (x + text.get_width() + 20, y_offset + i * 80)
+                )  # Right arrow
 
         # ── HINT AT BOTTOM ──────────────────────────────────────────────────
         controls = self.font_small.render(
@@ -357,9 +408,33 @@ class Menu:
         )
 
     def draw_settings(self, screen):
+        """Draw the difficulty selection screen.
+
+        The idea is almost the same as the main menu:
+        - a title at the top
+        - a list of choices in the middle
+        - one highlighted choice showing the current cursor position
+        - a small instruction line at the bottom
+
+        SCREEN LAYOUT:
+
+            +--------------------------------------+
+            |               SETTINGS               |
+            |                                      |
+            |             DIFFICULTY:              |
+            |                                      |
+            |               > EASY                 |
+            |                 NORMAL               |
+            |                 HARD                 |
+            |                                      |
+            |      ENTER to confirm, ESC ...       |
+            +--------------------------------------+
+        """
+        # Large title so the player instantly knows which screen they are on.
         title = self.font_large.render("SETTINGS", True, pygame.Color("white"))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 80))
 
+        # Label above the list to explain what is being changed.
         difficulty_label = self.font_medium.render(
             "DIFFICULTY:", True, pygame.Color("white")
         )
@@ -368,6 +443,7 @@ class Menu:
             (SCREEN_WIDTH // 2 - difficulty_label.get_width() // 2, 200),
         )
 
+        # Draw each difficulty option one under the other.
         y_offset = 280
         for i, diff in enumerate(DIFFICULTIES):
             color = (
@@ -379,10 +455,12 @@ class Menu:
             x = SCREEN_WIDTH // 2 - text.get_width() // 2
             screen.blit(text, (x, y_offset + i * 60))
 
+            # Arrow marks the currently selected difficulty.
             if i == self.difficulty_selected:
                 indicator = self.font_small.render(">", True, pygame.Color("yellow"))
                 screen.blit(indicator, (x - 50, y_offset + i * 60))
 
+        # Reminder controls: confirm with Enter, leave with Escape.
         back_text = self.font_small.render(
             "ENTER to confirm, ESC to cancel", True, pygame.Color("lightgray")
         )
@@ -392,10 +470,31 @@ class Menu:
         )
 
     def draw_tutorial(self, screen):
+        """Draw a simple text-based tutorial page.
+
+        Instead of teaching through animation, this screen uses a list of short
+        lines. Some lines are section titles like OBJECTIVE: or CONTROLS:,
+        while others are ordinary explanations.
+
+        PAGE STRUCTURE:
+
+            TUTORIAL
+            --------
+            OBJECTIVE:
+            CONTROLS:
+            WEAPONS:
+            POWER-UPS:
+            TIPS:
+
+        This is similar to notes on a classroom handout:
+        short sections, short lines, easy to scan quickly.
+        """
+        # Title at the top of the screen.
         title = self.font_large.render("TUTORIAL", True, pygame.Color("white"))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 40))
 
-        # Tutorial content
+        # Each line is drawn one after another vertically.
+        # Empty strings act as visual spacing between sections.
         tutorial_lines = [
             "OBJECTIVE:",
             "Destroy all asteroids to survive. Avoid collisions.",
@@ -423,11 +522,12 @@ class Menu:
 
         y_offset = 120
         for line in tutorial_lines:
+            # Blank line = just move downward a bit without drawing text.
             if line == "":
                 y_offset += 15
                 continue
 
-            # Make section headers yellow
+            # Section headers are drawn in cyan so they stand out from the body text.
             if line.endswith(":") and line.isupper():
                 color = pygame.Color("cyan")
                 font = self.font_small
@@ -439,6 +539,7 @@ class Menu:
             screen.blit(text, (50, y_offset))
             y_offset += 25
 
+        # Final reminder so the player knows how to go back.
         back_text = self.font_small.render(
             "ESC to return to menu", True, pygame.Color("lightgray")
         )
@@ -468,6 +569,23 @@ class Menu:
         - "quit"              → player confirmed EXIT (or closed window)
         - ("move", new_idx)   → player moved the cursor (pass new index back)
         - None                → nothing relevant happened this frame
+
+        NAVIGATION MAP:
+
+            selected = 0  -> TRY AGAIN
+            selected = 1  -> EXIT
+
+                 UP or DOWN
+               flips 0 <-> 1
+
+        Because there are only TWO choices, both arrow keys simply toggle.
+        That is why the code can use:
+
+            1 - selected
+
+        since:
+            1 - 0 = 1
+            1 - 1 = 0
         """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -485,7 +603,7 @@ class Menu:
                     # selected == 0 → TRY AGAIN, anything else → EXIT
                     return "restart" if selected == 0 else "quit"
                 if event.key == pygame.K_ESCAPE:
-                    return "quit"   # Escape acts the same as EXIT
+                    return "quit"  # Escape acts the same as EXIT
         return None
 
     def draw_game_over(self, screen, score, is_new_high, selected):
@@ -507,6 +625,18 @@ class Menu:
         │          EXIT                 ← white or yellow     │
         │ UP/DOWN to choose…            ← hint at bottom      │
         └─────────────────────────────────────────────┘
+
+                SELECTION EXAMPLE:
+
+                        if selected == 0:
+                                > TRY AGAIN <
+                                    EXIT
+
+                        if selected == 1:
+                                    TRY AGAIN
+                                > EXIT <
+
+                The yellow arrows act like a visual cursor.
         """
         # Blank out the screen (must do this every frame or old image shows through)
         screen.fill("black")
@@ -524,9 +654,7 @@ class Menu:
         score_text = self.font_medium.render(
             f"Score: {score}", True, pygame.Color("white")
         )
-        screen.blit(
-            score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, 200)
-        )
+        screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, 200))
 
         # ── NEW HIGH SCORE BADGE (only when player breaks the record) ──────
         # y_badge tracks the vertical position so content below shifts down
@@ -538,7 +666,7 @@ class Menu:
                 "NEW HIGH SCORE!", True, pygame.Color("cyan")
             )
             screen.blit(badge, (SCREEN_WIDTH // 2 - badge.get_width() // 2, y_badge))
-            y_badge += 50   # Push "Best:" line further down to make room
+            y_badge += 50  # Push "Best:" line further down to make room
 
         # ── ALL-TIME BEST ──────────────────────────────────────────────────
         # If is_new_high is True, self.high_score was already updated by
@@ -547,9 +675,7 @@ class Menu:
         hs_text = self.font_small.render(
             f"Best: {self.high_score}", True, pygame.Color("lightgray")
         )
-        screen.blit(
-            hs_text, (SCREEN_WIDTH // 2 - hs_text.get_width() // 2, y_badge)
-        )
+        screen.blit(hs_text, (SCREEN_WIDTH // 2 - hs_text.get_width() // 2, y_badge))
 
         # ── MENU OPTIONS (TRY AGAIN / EXIT) ───────────────────────────────
         # Same yellow-highlight + arrow pattern as the main menu
@@ -565,8 +691,10 @@ class Menu:
             # Draw "> OPTION <" arrows only around the selected option
             if i == selected:
                 arrow = self.font_medium.render(">", True, pygame.Color("yellow"))
-                screen.blit(arrow, (x - 50, y_options + i * 70))                    # Left
-                screen.blit(arrow, (x + text.get_width() + 14, y_options + i * 70)) # Right
+                screen.blit(arrow, (x - 50, y_options + i * 70))  # Left
+                screen.blit(
+                    arrow, (x + text.get_width() + 14, y_options + i * 70)
+                )  # Right
 
         # ── HINT ───────────────────────────────────────────────────────────
         # Placed at the very bottom (SCREEN_HEIGHT - 50)
@@ -574,4 +702,6 @@ class Menu:
         hint = self.font_small.render(
             "UP/DOWN to choose, ENTER to confirm", True, pygame.Color("gray")
         )
-        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+        screen.blit(
+            hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50)
+        )
