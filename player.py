@@ -5,6 +5,7 @@ from constants import (
     PLAYER_TURN_SPEED,
     PLAYER_SPEED,
     PLAYER_SHOOT_SPEED,
+    PLAYER_SHOOT_COOLDOWN_SECONDS,
 )
 from circleshape import CircleShape
 from shot import Shot
@@ -15,6 +16,7 @@ class Player(CircleShape):
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
+        self.shot_cooldown_timer = 0
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -44,8 +46,13 @@ class Player(CircleShape):
             self.move(dt)
         if keys[pygame.K_s]:
             self.move(dt)
+
+        # Decrease the shoot cooldown timer each frame.
+        self.shot_cooldown_timer = max(0, self.shot_cooldown_timer - dt)
+
+        # If the shooting key is down, attempt to shoot.
         if keys[pygame.K_SPACE]:
-            return self.shoot()
+            self.shoot()
 
     def move(self, dt):
         unit_vector = pygame.Vector2(0, 1)
@@ -54,9 +61,16 @@ class Player(CircleShape):
         self.position += rotated_with_speed_vector
 
     def shoot(self):
+        # If the cooldown is still active, do not shoot.
+        if self.shot_cooldown_timer > 0:
+            return None
+
+        # Start cooldown timer.
+        self.shot_cooldown_timer = PLAYER_SHOOT_COOLDOWN_SECONDS
+
         # the shot should start at the tip of the triangle, which is the forward direction of the player
         unit_vector = pygame.Vector2(0, 1)
-        # rotate the unit vector by the player's rotation (in the direction the playser is facing)to get the direction of the shot
+        # rotate the unit vector by the player's rotation (in the direction the player is facing) to get direction
         rotated_vector = unit_vector.rotate(self.rotation)
         # Scale it up (multiply by PLAYER_SHOOT_SPEED) to make it move faster than the player
         shot_velocity = rotated_vector * PLAYER_SHOOT_SPEED
