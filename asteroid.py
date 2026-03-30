@@ -37,13 +37,21 @@ class Asteroid(CircleShape):
         pygame.draw.polygon(screen, self.color_inner, points)
 
         # second fill overlay for depth with translucency using surface
-        surface = pygame.Surface((self.radius * 2 + 4, self.radius * 2 + 4), pygame.SRCALPHA)
+        surface = pygame.Surface(
+            (self.radius * 2 + 4, self.radius * 2 + 4), pygame.SRCALPHA
+        )
         offset_points = [
-            (p[0] - self.position.x + self.radius + 2, p[1] - self.position.y + self.radius + 2)
+            (
+                p[0] - self.position.x + self.radius + 2,
+                p[1] - self.position.y + self.radius + 2,
+            )
             for p in points
         ]
         pygame.draw.polygon(surface, (*self.color_outer, 120), offset_points)
-        screen.blit(surface, (self.position.x - self.radius - 2, self.position.y - self.radius - 2))
+        screen.blit(
+            surface,
+            (self.position.x - self.radius - 2, self.position.y - self.radius - 2),
+        )
 
         # outline
         outline_color = (255, 255, 255)

@@ -122,7 +122,12 @@ class Player(CircleShape):
         if isinstance(other, CircleShape):
             tri = self.triangle()
             # check if circle center is inside triangle
-            if self.__point_in_triangle(other.position, pygame.Vector2(tri[0]), pygame.Vector2(tri[1]), pygame.Vector2(tri[2])):
+            if self.__point_in_triangle(
+                other.position,
+                pygame.Vector2(tri[0]),
+                pygame.Vector2(tri[1]),
+                pygame.Vector2(tri[2]),
+            ):
                 return True
 
             # edge-to-circle collision

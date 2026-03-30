@@ -34,6 +34,7 @@ def main():
     lives = PLAYER_LIVES
     invulnerable_timer = 0
     respawn_timer = 0
+    debug_draw_hitbox = False
     font = pygame.font.Font(None, 30)
 
     # Groups:
@@ -58,6 +59,8 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
+                debug_draw_hitbox = not debug_draw_hitbox
 
         dt = clock.tick(60) / 1000
 
@@ -109,6 +112,9 @@ def main():
             if isinstance(object, Player) and not player.active:
                 continue
             object.draw(screen)
+
+        if debug_draw_hitbox and player.active:
+            pygame.draw.polygon(screen, pygame.Color("yellow"), player.triangle(), 1)
 
         # Handle respawn timer and player active state
         if respawn_timer > 0:
