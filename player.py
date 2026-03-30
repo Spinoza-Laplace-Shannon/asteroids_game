@@ -1,3 +1,4 @@
+import math
 import pygame
 from constants import (
     PLAYER_RADIUS,
@@ -16,10 +17,11 @@ from constants import (
     WEAPON_COLOR_SPREAD,
     WEAPON_COLOR_RAPID,
     PLAYER_HITBOX_SCALE,
+    SHIELD_PULSE_SPEED,
+    BOMB_COOLDOWN_SECONDS,
 )
 from circleshape import CircleShape
 from shot import Shot
-
 
 # the Player class
 class Player(CircleShape):
@@ -31,6 +33,11 @@ class Player(CircleShape):
         self.acceleration = pygame.Vector2(0, 0)
         self.active = True
         self.weapon = WEAPON_SINGLE
+        self.shield_active = False
+        self.shield_timer = 0
+        self.shield_pulse = 0
+        self.shield_expired = False
+        self.bomb_cooldown_timer = 0
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -51,6 +58,30 @@ class Player(CircleShape):
 
     def draw(self, screen):
         pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
+        if self.shield_active:
+            # pulsing glow using alpha
+            pulse = (math.sin(self.shield_pulse * SHIELD_PULSE_SPEED) + 1) / 2
+            alpha = int(80 + 120 * pulse)
+            radius = self.radius * 1.5 + 4 * pulse
+
+            # color transitions from green -> yellow -> red based on remaining shield time
+            remaining = self.shield_timer / SHIELD_DURATION_SECONDS
+            r = int((1.0 - remaining) * 255)
+            g = int(remaining * 255)
+            b = 50
+
+            glow_surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(
+                glow_surface,
+                (r, g, b, alpha),
+                (radius, radius),
+                int(radius),
+            )
+            screen.blit(
+                glow_surface,
+                (self.position.x - radius, self.position.y - radius),
+            )
+            pygame.draw.polygon(screen, (r, g, b), self.triangle(), 2)
 
     # Moving around the screen
     def rotate(self, dt):
@@ -92,8 +123,19 @@ class Player(CircleShape):
         self.position += self.velocity * dt
         self.wrap()
 
+        # Decrease the shield timer
+        if self.shield_active:
+            self.shield_timer = max(0, self.shield_timer - dt)
+            self.shield_pulse += dt
+            if self.shield_timer <= 0:
+                self.shield_active = False
+                self.shield_expired = True
+
         # Decrease the shoot cooldown timer each frame.
         self.shot_cooldown_timer = max(0, self.shot_cooldown_timer - dt)
+
+        # Decrease the bomb cooldown timer each frame.
+        self.bomb_cooldown_timer = max(0, self.bomb_cooldown_timer - dt)
 
         # Weapon selection
         if keys[pygame.K_1]:
@@ -105,6 +147,9 @@ class Player(CircleShape):
 
         if keys[pygame.K_SPACE]:
             self.shoot()
+
+        if keys[pygame.K_b]:
+            self.drop_bomb()
 
     def move(self, dt):
         unit_vector = pygame.Vector2(0, 1)
@@ -175,3 +220,13 @@ class Player(CircleShape):
         self.shot_cooldown_timer = PLAYER_SHOOT_COOLDOWN_SECONDS
         shot_velocity = unit_vector * PLAYER_SHOOT_SPEED
         return Shot(self.position, shot_velocity, WEAPON_COLOR_SINGLE)
+
+    def drop_bomb(self):
+        if self.bomb_cooldown_timer > 0:
+            return None
+
+        from bomb import Bomb
+
+        self.bomb_cooldown_timer = BOMB_COOLDOWN_SECONDS
+        bomb = Bomb(self.position.x, self.position.y, self.velocity.copy())
+        return bomb
