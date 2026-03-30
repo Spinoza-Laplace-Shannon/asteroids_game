@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# snapshot of your game state about once per second
+game_state.jsonl
+
+#collision logs
+game_events.jsonl

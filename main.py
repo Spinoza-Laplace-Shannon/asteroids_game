@@ -19,6 +19,9 @@ def main():
     x = SCREEN_WIDTH / 2
     y = SCREEN_HEIGHT / 2
 
+    score = 0
+    font = pygame.font.Font(None, 30)
+
     # Groups:
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
@@ -44,6 +47,11 @@ def main():
         dt = clock.tick(60) / 1000
 
         screen.fill("black")
+
+        # Draw HUD
+        score_text = font.render(f"Score: {score}", True, pygame.Color("white"))
+        screen.blit(score_text, (10, 10))
+
         for object in drawable:
             object.draw(screen)
         for object in updatable:
@@ -68,7 +76,22 @@ def main():
         for asteroid in list(asteroids):
             for shot in list(shots):
                 if asteroid.collides_with(shot):
-                    log_event("asteroid_shot")
+                    if asteroid.radius <= ASTEROID_MIN_RADIUS:
+                        points = SCORE_SMALL_ASTEROID
+                    elif asteroid.radius <= ASTEROID_MIN_RADIUS * 2:
+                        points = SCORE_MEDIUM_ASTEROID
+                    else:
+                        points = SCORE_LARGE_ASTEROID
+
+                    score += points
+
+                    log_event(
+                        "asteroid_shot",
+                        points=points,
+                        score=score,
+                        asteroid_radius=asteroid.radius,
+                    )
+
                     shot.kill()
                     asteroid.split()
 
