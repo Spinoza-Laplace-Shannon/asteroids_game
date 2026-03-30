@@ -39,6 +39,10 @@ def main():
         pygame.display.flip()
         clock.tick(60)
 
+    # Get selected difficulty
+    difficulty = menu.difficulty
+    print(f"Starting game with difficulty: {difficulty}")
+
     # Continue with game initialization
     def make_tone(freq, duration=0.2, volume=0.5, sample_rate=44100, waveform="sine"):
         n_samples = int(sample_rate * duration)
@@ -94,6 +98,8 @@ def main():
     invulnerable_timer = 0
     respawn_timer = 0
     debug_draw_hitbox = False
+    paused = False
+    pause_selected = 0
     font = pygame.font.Font(None, 30)
 
     # Groups:
@@ -125,8 +131,47 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                paused = not paused
+                pause_selected = 0
             if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
                 debug_draw_hitbox = not debug_draw_hitbox
+
+            # Pause menu input
+            if paused:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        pause_selected = (pause_selected - 1) % 2
+                    elif event.key == pygame.K_DOWN:
+                        pause_selected = (pause_selected + 1) % 2
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        if pause_selected == 0:
+                            paused = False
+                        elif pause_selected == 1:
+                            return
+
+        if paused:
+            # Draw pause menu overlay
+            screen.fill("black")
+            pause_title = font_large = pygame.font.Font(None, 80)
+            title_text = pause_title.render("PAUSED", True, pygame.Color("yellow"))
+            screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, 100))
+
+            y_offset = 300
+            pause_options = ["RESUME", "RETURN TO MENU"]
+            for i, option in enumerate(pause_options):
+                color = pygame.Color("yellow") if i == pause_selected else pygame.Color("white")
+                text = font.render(option, True, color)
+                x = SCREEN_WIDTH // 2 - text.get_width() // 2
+                screen.blit(text, (x, y_offset + i * 80))
+                if i == pause_selected:
+                    indicator = font.render(">", True, pygame.Color("yellow"))
+                    screen.blit(indicator, (x - 60, y_offset + i * 80))
+                    screen.blit(indicator, (x + text.get_width() + 20, y_offset + i * 80))
+
+            pygame.display.flip()
+            clock.tick(60)
+            continue
 
         dt = clock.tick(60) / 1000
 
@@ -173,7 +218,7 @@ def main():
             shield_ready_timer = max(0, shield_ready_timer - dt)
 
         help_text = font.render(
-            "Arrows=Move, 1=Single 2=Spread 3=Rapid, Space=Fire, B=Bomb",
+            "Arrows=Move, 1=Single 2=Spread 3=Rapid, Space=Fire, B=Bomb, ESC=Pause",
             True,
             pygame.Color("lightgray"),
         )
@@ -262,6 +307,9 @@ def main():
 
                     if lives <= 0:
                         print("Game over!")
+                        # Save high score if current score is better
+                        if score > menu.high_score:
+                            menu.save_high_score(score)
                         exit()
 
                     # Respawn player in center and reset velocity
