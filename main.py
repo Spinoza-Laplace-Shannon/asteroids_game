@@ -17,47 +17,64 @@ from shot import Shot
 
 
 def main():
+    """Main game function - sets up and runs the entire Asteroids game"""
     print(f"Starting Asteroids with pygame version: {pygame.version.ver}")
     print(f"Screen width: {SCREEN_WIDTH} \nScreen height: {SCREEN_HEIGHT}")
-    pygame.init()
-    pygame.mixer.init()
+    pygame.init()  # Initialize all Pygame modules
+    pygame.mixer.init()  # Initialize sound system
 
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("ASTEROIDS")
-    clock = pygame.time.Clock()
+    screen = pygame.display.set_mode(
+        (SCREEN_WIDTH, SCREEN_HEIGHT)
+    )  # Create game window
+    pygame.display.set_caption("ASTEROIDS")  # Set window title
+    clock = pygame.time.Clock()  # Used to control game speed (60 FPS)
 
-    # Show menu
+    # SHOW MENU - Display menu and wait for player to select Play
     menu = Menu()
     menu_running = True
     while menu_running:
-        action = menu.handle_input()
+        action = menu.handle_input()  # Check for menu input (up/down/enter/quit)
         if action == "quit":
-            return
+            return  # Exit game
         elif action == "play":
-            menu_running = False
-        menu.draw(screen)
-        pygame.display.flip()
-        clock.tick(60)
+            menu_running = False  # Exit menu loop and start game
+        menu.draw(screen)  # Draw menu on screen
+        pygame.display.flip()  # Update display
+        clock.tick(60)  # Run at 60 FPS
 
-    # Get selected difficulty
+    # Get selected difficulty from menu
     difficulty = menu.difficulty
     print(f"Starting game with difficulty: {difficulty}")
 
-    # Continue with game initialization
+    # AUDIO SETUP - Generate game sound effects
     def make_tone(freq, duration=0.2, volume=0.5, sample_rate=44100, waveform="sine"):
+        """Create a sound effect by generating audio waveform
+        This creates real sound data that Pygame can play
+
+        Parameters:
+        - freq: frequency in Hz (higher = higher pitch)
+        - duration: how long sound plays in seconds
+        - volume: how loud (0.0 to 1.0)
+        - waveform: "sine", "triangle", or "square" (different shapes = different tones)
+        """
+        # Calculate total number of audio samples needed
         n_samples = int(sample_rate * duration)
-        buf = bytearray()
+        buf = bytearray()  # Store all audio samples here
+
+        # Generate each audio sample
         for i in range(n_samples):
-            t = i / sample_rate
-            phase = 2.0 * math.pi * freq * t
+            t = i / sample_rate  # Current time in seconds
+            phase = 2.0 * math.pi * freq * t  # Wave position
+
+            # Create different wave shapes
             if waveform == "sine":
-                value = math.sin(phase)
+                value = math.sin(phase)  # Smooth wave
             elif waveform == "triangle":
                 period = 1.0 / freq
                 x = (t / period) % 1.0
-                value = 4.0 * abs(x - 0.5) - 1.0
+                value = 4.0 * abs(x - 0.5) - 1.0  # Zig-zag wave
             elif waveform == "square":
-                value = 1.0 if math.sin(phase) >= 0 else -1.0
+                value = 1.0 if math.sin(phase) >= 0 else -1.0  # On/off wave
             else:
                 value = math.sin(phase)
 
@@ -73,9 +90,15 @@ def main():
         bio.seek(0)
         return pygame.mixer.Sound(file=bio)
 
-    pickup_sound = make_tone(880, duration=0.15, volume=SOUND_VOLUME_PICKUP, waveform="triangle")
-    block_sound = make_tone(440, duration=0.12, volume=SOUND_VOLUME_BLOCK, waveform="square")
-    shield_expire_sound = make_tone(660, duration=0.2, volume=SOUND_VOLUME_SHIELD_EXPIRE, waveform="sine")
+    pickup_sound = make_tone(
+        880, duration=0.15, volume=SOUND_VOLUME_PICKUP, waveform="triangle"
+    )
+    block_sound = make_tone(
+        440, duration=0.12, volume=SOUND_VOLUME_BLOCK, waveform="square"
+    )
+    shield_expire_sound = make_tone(
+        660, duration=0.2, volume=SOUND_VOLUME_SHIELD_EXPIRE, waveform="sine"
+    )
 
     # Load background image (optional)
     background = None
@@ -155,19 +178,27 @@ def main():
             screen.fill("black")
             pause_title = font_large = pygame.font.Font(None, 80)
             title_text = pause_title.render("PAUSED", True, pygame.Color("yellow"))
-            screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, 100))
+            screen.blit(
+                title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, 100)
+            )
 
             y_offset = 300
             pause_options = ["RESUME", "RETURN TO MENU"]
             for i, option in enumerate(pause_options):
-                color = pygame.Color("yellow") if i == pause_selected else pygame.Color("white")
+                color = (
+                    pygame.Color("yellow")
+                    if i == pause_selected
+                    else pygame.Color("white")
+                )
                 text = font.render(option, True, color)
                 x = SCREEN_WIDTH // 2 - text.get_width() // 2
                 screen.blit(text, (x, y_offset + i * 80))
                 if i == pause_selected:
                     indicator = font.render(">", True, pygame.Color("yellow"))
                     screen.blit(indicator, (x - 60, y_offset + i * 80))
-                    screen.blit(indicator, (x + text.get_width() + 20, y_offset + i * 80))
+                    screen.blit(
+                        indicator, (x + text.get_width() + 20, y_offset + i * 80)
+                    )
 
             pygame.display.flip()
             clock.tick(60)
@@ -361,7 +392,10 @@ def main():
             if bomb.exploded:
                 # Create explosion visual at bomb location
                 Explosion(bomb.position.x, bomb.position.y)
-                log_event("bomb_exploded", bomb_pos=[round(bomb.position.x, 2), round(bomb.position.y, 2)])
+                log_event(
+                    "bomb_exploded",
+                    bomb_pos=[round(bomb.position.x, 2), round(bomb.position.y, 2)],
+                )
 
                 # Damage all nearby asteroids
                 for asteroid in list(asteroids):

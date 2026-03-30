@@ -23,21 +23,36 @@ from constants import (
 from circleshape import CircleShape
 from shot import Shot
 
-# the Player class
+
+# ============================================================================
+# The Player class represents the spaceship that the player controls
+# It handles movement, rotation, shooting, shields, and collision detection
+# ============================================================================
 class Player(CircleShape):
+    """The player's spaceship - shoot asteroids and avoid collisions!
+
+    Features:
+    - Rotation with arrow keys (LEFT/RIGHT)
+    - Acceleration with UP arrow
+    - Multiple weapon types
+    - Shield power-up
+    - Bombs that explode asteroids
+    """
+
     def __init__(self, x, y):
-        super().__init__(x, y, PLAYER_RADIUS)
-        self.rotation = 0
-        self.shot_cooldown_timer = 0
-        self.velocity = pygame.Vector2(0, 0)
-        self.acceleration = pygame.Vector2(0, 0)
-        self.active = True
-        self.weapon = WEAPON_SINGLE
-        self.shield_active = False
-        self.shield_timer = 0
-        self.shield_pulse = 0
-        self.shield_expired = False
-        self.bomb_cooldown_timer = 0
+        """Create a player at position (x, y)"""
+        super().__init__(x, y, PLAYER_RADIUS)  # Call parent CircleShape class
+        self.rotation = 0  # Current angle the ship is pointing (0-360 degrees)
+        self.shot_cooldown_timer = 0  # Count down until next shot allowed
+        self.velocity = pygame.Vector2(0, 0)  # Current speed and direction
+        self.acceleration = pygame.Vector2(0, 0)  # Current thrust force
+        self.active = True  # Is this player active?
+        self.weapon = WEAPON_SINGLE  # Current weapon type
+        self.shield_active = False  # Is shield protecting the player?
+        self.shield_timer = 0  # How long shield has been active
+        self.shield_pulse = 0  # Animation counter for shield glow
+        self.shield_expired = False  # Did shield just expire?
+        self.bomb_cooldown_timer = 0  # Count down until next bomb allowed
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)

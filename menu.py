@@ -1,7 +1,13 @@
 import pygame
 import os
 import json
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, DIFFICULTIES, DIFFICULTY_NORMAL, SOUND_VOLUME_MENU_NAV
+from constants import (
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    DIFFICULTIES,
+    DIFFICULTY_NORMAL,
+    SOUND_VOLUME_MENU_NAV,
+)
 import math
 
 
@@ -28,7 +34,9 @@ class Menu:
             n_samples = int(sample_rate * duration)
             buf = bytearray()
             for i in range(n_samples):
-                sample = int(volume * 32767.0 * math.sin(2.0 * math.pi * freq * i / sample_rate))
+                sample = int(
+                    volume * 32767.0 * math.sin(2.0 * math.pi * freq * i / sample_rate)
+                )
                 buf.extend(bytes([sample & 0xFF, (sample >> 8) & 0xFF]))
             sound = pygame.mixer.Sound(buffer=buf)
             return sound
@@ -56,45 +64,66 @@ class Menu:
             pass
 
     def handle_input(self):
+        """Process player input in menu (arrow keys, enter, escape, quit)"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return "quit"
+                return "quit"  # Player closed window
+
             if event.type == pygame.KEYDOWN:
+                # UP ARROW - Move selection up
                 if event.key == pygame.K_UP:
                     if self.state == "main":
+                        # Wrap around list when at top
                         self.selected = (self.selected - 1) % len(self.options)
                     else:
-                        self.difficulty_selected = (self.difficulty_selected - 1) % len(DIFFICULTIES)
+                        # In difficulty screen
+                        self.difficulty_selected = (self.difficulty_selected - 1) % len(
+                            DIFFICULTIES
+                        )
                     if self.menu_nav_sound:
-                        self.menu_nav_sound.play()
+                        self.menu_nav_sound.play()  # Play menu beep
+
+                # DOWN ARROW - Move selection down
                 elif event.key == pygame.K_DOWN:
                     if self.state == "main":
+                        # Wrap around list when at bottom
                         self.selected = (self.selected + 1) % len(self.options)
                     else:
-                        self.difficulty_selected = (self.difficulty_selected + 1) % len(DIFFICULTIES)
+                        # In difficulty screen
+                        self.difficulty_selected = (self.difficulty_selected + 1) % len(
+                            DIFFICULTIES
+                        )
                     if self.menu_nav_sound:
-                        self.menu_nav_sound.play()
+                        self.menu_nav_sound.play()  # Play menu beep
+
+                # ENTER or SPACE - Select current option
                 elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                     if self.state == "main":
                         if self.selected == 0:
-                            return "play"
+                            return "play"  # Start game
                         elif self.selected == 1:
-                            self.state = "tutorial"
+                            self.state = "tutorial"  # Show tutorial
                         elif self.selected == 2:
-                            self.state = "settings"
+                            self.state = "settings"  # Go to settings
                             self.selected = 0
-                            self.difficulty_selected = DIFFICULTIES.index(self.difficulty)
+                            self.difficulty_selected = DIFFICULTIES.index(
+                                self.difficulty
+                            )
                         elif self.selected == 3:
-                            return "quit"
+                            return "quit"  # Exit game
                     elif self.state == "settings":
+                        # Confirm difficulty selection and save
                         if self.difficulty_selected < len(DIFFICULTIES):
                             self.difficulty = DIFFICULTIES[self.difficulty_selected]
                         self.state = "main"
-                        self.selected = 1
+                        self.selected = 2  # Go back to SETTINGS option
+
+                # ESC - Go back to main menu
                 elif event.key == pygame.K_ESCAPE:
                     if self.state == "settings" or self.state == "tutorial":
                         self.state = "main"
-                        self.selected = 1
+                        self.selected = 1  # Default to first menu item
+
         return None
 
     def draw(self, screen):
@@ -111,45 +140,68 @@ class Menu:
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
 
         # High score display
-        hs_text = self.font_small.render(f"Best Score: {self.high_score}", True, pygame.Color("cyan"))
+        hs_text = self.font_small.render(
+            f"Best Score: {self.high_score}", True, pygame.Color("cyan")
+        )
         screen.blit(hs_text, (SCREEN_WIDTH // 2 - hs_text.get_width() // 2, 130))
 
         y_offset = 250
         for i, option in enumerate(self.options):
-            color = pygame.Color("yellow") if i == self.selected else pygame.Color("white")
+            color = (
+                pygame.Color("yellow") if i == self.selected else pygame.Color("white")
+            )
             text = self.font_medium.render(option, True, color)
             x = SCREEN_WIDTH // 2 - text.get_width() // 2
             screen.blit(text, (x, y_offset + i * 80))
-            
+
             # Add selection indicator
             if i == self.selected:
                 indicator = self.font_medium.render(">", True, pygame.Color("yellow"))
                 screen.blit(indicator, (x - 60, y_offset + i * 80))
                 screen.blit(indicator, (x + text.get_width() + 20, y_offset + i * 80))
 
-        controls = self.font_small.render("Use UP/DOWN to select, ENTER to proceed", True, pygame.Color("lightgray"))
-        screen.blit(controls, (SCREEN_WIDTH // 2 - controls.get_width() // 2, SCREEN_HEIGHT - 50))
+        controls = self.font_small.render(
+            "Use UP/DOWN to select, ENTER to proceed", True, pygame.Color("lightgray")
+        )
+        screen.blit(
+            controls,
+            (SCREEN_WIDTH // 2 - controls.get_width() // 2, SCREEN_HEIGHT - 50),
+        )
 
     def draw_settings(self, screen):
         title = self.font_large.render("SETTINGS", True, pygame.Color("white"))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 80))
 
-        difficulty_label = self.font_medium.render("DIFFICULTY:", True, pygame.Color("white"))
-        screen.blit(difficulty_label, (SCREEN_WIDTH // 2 - difficulty_label.get_width() // 2, 200))
+        difficulty_label = self.font_medium.render(
+            "DIFFICULTY:", True, pygame.Color("white")
+        )
+        screen.blit(
+            difficulty_label,
+            (SCREEN_WIDTH // 2 - difficulty_label.get_width() // 2, 200),
+        )
 
         y_offset = 280
         for i, diff in enumerate(DIFFICULTIES):
-            color = pygame.Color("yellow") if i == self.difficulty_selected else pygame.Color("white")
+            color = (
+                pygame.Color("yellow")
+                if i == self.difficulty_selected
+                else pygame.Color("white")
+            )
             text = self.font_small.render(diff, True, color)
             x = SCREEN_WIDTH // 2 - text.get_width() // 2
             screen.blit(text, (x, y_offset + i * 60))
-            
+
             if i == self.difficulty_selected:
                 indicator = self.font_small.render(">", True, pygame.Color("yellow"))
                 screen.blit(indicator, (x - 50, y_offset + i * 60))
 
-        back_text = self.font_small.render("ENTER to confirm, ESC to cancel", True, pygame.Color("lightgray"))
-        screen.blit(back_text, (SCREEN_WIDTH // 2 - back_text.get_width() // 2, SCREEN_HEIGHT - 50))
+        back_text = self.font_small.render(
+            "ENTER to confirm, ESC to cancel", True, pygame.Color("lightgray")
+        )
+        screen.blit(
+            back_text,
+            (SCREEN_WIDTH // 2 - back_text.get_width() // 2, SCREEN_HEIGHT - 50),
+        )
 
     def draw_tutorial(self, screen):
         title = self.font_large.render("TUTORIAL", True, pygame.Color("white"))
@@ -186,7 +238,7 @@ class Menu:
             if line == "":
                 y_offset += 15
                 continue
-            
+
             # Make section headers yellow
             if line.endswith(":") and line.isupper():
                 color = pygame.Color("cyan")
@@ -194,10 +246,15 @@ class Menu:
             else:
                 color = pygame.Color("lightgray")
                 font = self.font_small
-            
+
             text = font.render(line, True, color)
             screen.blit(text, (50, y_offset))
             y_offset += 25
 
-        back_text = self.font_small.render("ESC to return to menu", True, pygame.Color("lightgray"))
-        screen.blit(back_text, (SCREEN_WIDTH // 2 - back_text.get_width() // 2, SCREEN_HEIGHT - 50))
+        back_text = self.font_small.render(
+            "ESC to return to menu", True, pygame.Color("lightgray")
+        )
+        screen.blit(
+            back_text,
+            (SCREEN_WIDTH // 2 - back_text.get_width() // 2, SCREEN_HEIGHT - 50),
+        )
