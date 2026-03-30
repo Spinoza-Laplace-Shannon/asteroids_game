@@ -94,18 +94,18 @@ class Player(CircleShape):
         keys = pygame.key.get_pressed()
 
         # Rotation
-        if keys[pygame.K_a]:
+        if keys[pygame.K_LEFT]:
             self.rotate(-dt)
-        if keys[pygame.K_d]:
+        if keys[pygame.K_RIGHT]:
             self.rotate(dt)
 
         # Thrust
         thrust_vector = pygame.Vector2(0, 0)
-        if keys[pygame.K_w]:
+        if keys[pygame.K_UP]:
             thrust_vector = (
                 pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_ACCELERATION
             )
-        if keys[pygame.K_s]:
+        if keys[pygame.K_DOWN]:
             thrust_vector = (
                 pygame.Vector2(0, -1).rotate(self.rotation) * PLAYER_ACCELERATION
             )

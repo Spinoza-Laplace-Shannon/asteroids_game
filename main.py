@@ -11,6 +11,7 @@ from asteroid import Asteroid, Explosion
 from asteroidfield import AsteroidField
 from powerup import PowerUp
 from bomb import Bomb
+from menu import Menu
 from sys import exit
 from shot import Shot
 
@@ -21,6 +22,24 @@ def main():
     pygame.init()
     pygame.mixer.init()
 
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("ASTEROIDS")
+    clock = pygame.time.Clock()
+
+    # Show menu
+    menu = Menu()
+    menu_running = True
+    while menu_running:
+        action = menu.handle_input()
+        if action == "quit":
+            return
+        elif action == "play":
+            menu_running = False
+        menu.draw(screen)
+        pygame.display.flip()
+        clock.tick(60)
+
+    # Continue with game initialization
     def make_tone(freq, duration=0.2, volume=0.5, sample_rate=44100, waveform="sine"):
         n_samples = int(sample_rate * duration)
         buf = bytearray()
@@ -53,8 +72,6 @@ def main():
     pickup_sound = make_tone(880, duration=0.15, volume=SOUND_VOLUME_PICKUP, waveform="triangle")
     block_sound = make_tone(440, duration=0.12, volume=SOUND_VOLUME_BLOCK, waveform="square")
     shield_expire_sound = make_tone(660, duration=0.2, volume=SOUND_VOLUME_SHIELD_EXPIRE, waveform="sine")
-
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
     # Load background image (optional)
     background = None
@@ -156,7 +173,7 @@ def main():
             shield_ready_timer = max(0, shield_ready_timer - dt)
 
         help_text = font.render(
-            "Press 1=Single 2=Spread 3=Rapid, Space=Fire, B=Bomb",
+            "Arrows=Move, 1=Single 2=Spread 3=Rapid, Space=Fire, B=Bomb",
             True,
             pygame.Color("lightgray"),
         )
