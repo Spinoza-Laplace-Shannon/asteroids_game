@@ -1,7 +1,14 @@
 import pygame
 import random
 from .asteroid import Asteroid
-from .constants import *
+from .constants import (
+    ASTEROID_KINDS,
+    ASTEROID_MAX_RADIUS,
+    ASTEROID_MIN_RADIUS,
+    ASTEROID_SPAWN_RATE_SECONDS,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
 
 
 # ============================================================================
@@ -115,7 +122,7 @@ class AsteroidField(pygame.sprite.Sprite):
         asteroid.velocity = velocity
 
     def update(self, dt):
-        """Update spawner: count down timer and spawn when ready
+        """Update spawner: count up the timer and spawn when ready
 
         SPAWNING SYSTEM:
         ================

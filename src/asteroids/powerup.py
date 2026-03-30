@@ -1,6 +1,6 @@
 import pygame
 from .circleshape import CircleShape
-from .constants import POWERUP_SHIELD_RADIUS, SCREEN_WIDTH, SCREEN_HEIGHT
+from .constants import POWERUP_SHIELD_RADIUS
 
 
 # ============================================================================

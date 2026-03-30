@@ -1,8 +1,7 @@
 import pygame
 import random
-from .constants import *
+from .constants import ASTEROID_MIN_RADIUS
 from .logger import log_event
-from .player import *
 from .circleshape import CircleShape
 
 
@@ -71,26 +70,26 @@ class Asteroid(CircleShape):
         
         Each offset multiplies the radius (e.g., 1.2x makes point stick out more)
 
-                POLAR -> CARTESIAN IDEA:
+        POLAR -> CARTESIAN IDEA:
 
-                We first think in circular terms:
-                - angle = where around the asteroid we are
-                - distance = how far from the center this vertex sits
+        We first think in circular terms:
+        - angle = where around the asteroid we are
+        - distance = how far from the center this vertex sits
 
-                Then we convert that into normal screen coordinates:
+        Then we convert that into normal screen coordinates:
 
-                                 y
-                                 ^
-                                 |
-                                 |      point
-                                 |     *
-                                 |   / |
-                                 | /   |
-                                 C-----+----> x
-                             center
+                 y
+                 ^
+                 |
+                 |      point
+                 |     *
+                 |   / |
+                 | /   |
+                 C-----+----> x
+                   center
 
-                In code, pygame.Vector2(...).rotate(angle) gives us the direction.
-                Multiplying by distance gives the final "step" from the center.
+        In code, pygame.Vector2(...).rotate(angle) gives us the direction.
+        Multiplying by distance gives the final "step" from the center.
         """
         # CALCULATE POLYGON POINTS - Generate the bumpy shape
         points = []
@@ -197,18 +196,18 @@ class Asteroid(CircleShape):
         The 1.2x multiplier makes chunks faster than parent
         This creates action-packed visual when asteroids explode
 
-                ASCII VECTOR DIAGRAM:
+        ASCII VECTOR DIAGRAM:
 
-                                         chunk 1
-                                             \
-                                                \
-                        old velocity --->
-                                                /
-                                             /
-                                         chunk 2
+                                 chunk 1
+                                     \
+                                      \
+                    old velocity ------>
+                                      /
+                                     /
+                                 chunk 2
 
-                Both new chunks start from the same place, but their velocity vectors
-                are rotated in opposite directions, so they spread apart visually.
+        Both new chunks start from the same place, but their velocity vectors
+        are rotated in opposite directions, so they spread apart visually.
         """
         # Step 1: Remove this asteroid from game
         self.kill()
@@ -226,7 +225,7 @@ class Asteroid(CircleShape):
         # This variation makes each split feel different
         angle = random.uniform(20, 50)
 
-        # First piece: rotate velocityClockwise (positive angle), speed it up by 20%
+        # First piece: rotate velocity clockwise (positive angle), speed it up by 20%
         # EXAMPLE: if original velocity = (40, 0) pointing right at angle 0°
         #          then rotate 35° clockwise + 1.2x speed = pointing upper-right faster
         first_velocity = self.velocity.rotate(angle) * 1.2
