@@ -1,6 +1,6 @@
 import pygame
-from circleshape import CircleShape
-from constants import BOMB_RADIUS, LINE_WIDTH
+from .circleshape import CircleShape
+from .constants import BOMB_RADIUS, LINE_WIDTH
 
 
 # ============================================================================

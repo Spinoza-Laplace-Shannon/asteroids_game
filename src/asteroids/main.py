@@ -4,16 +4,24 @@ import wave
 import struct
 import pygame
 import random
-from constants import *
-from logger import log_state, log_event
-from player import *
-from asteroid import Asteroid, Explosion
-from asteroidfield import AsteroidField
-from powerup import PowerUp
-from bomb import Bomb
-from menu import Menu
+import os
+from pathlib import Path
+from .constants import *
+from .logger import log_state, log_event
+from .player import *
+from .asteroid import Asteroid, Explosion
+from .asteroidfield import AsteroidField
+from .powerup import PowerUp
+from .bomb import Bomb
+from .menu import Menu
 from sys import exit
-from shot import Shot
+from .shot import Shot
+
+
+# Get the project root directory (two levels up from this file)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+ASSETS_DIR = PROJECT_ROOT / "assets"
+DATA_DIR = PROJECT_ROOT / "data"
 
 
 def main():
@@ -103,11 +111,12 @@ def main():
     # Load background image (optional)
     background = None
     try:
-        background = pygame.image.load(
-            "/Users/u/workspace/bootdotdev/curriculum/asteroids_game/Background images/5446991.jpg"
-        ).convert()
-        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-    except Exception:
+        bg_path = ASSETS_DIR / "images" / "backgrounds" / "5446991.jpg"
+        if bg_path.exists():
+            background = pygame.image.load(str(bg_path)).convert()
+            background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except Exception as e:
+        print(f"Could not load background image: {e}")
         background = None
 
     clock = pygame.time.Clock()

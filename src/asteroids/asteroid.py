@@ -1,9 +1,9 @@
 import pygame
 import random
-from constants import *
-from logger import log_event
-from player import *
-from circleshape import CircleShape
+from .constants import *
+from .logger import log_event
+from .player import *
+from .circleshape import CircleShape
 
 
 # ============================================================================

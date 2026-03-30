@@ -1,7 +1,7 @@
 import pygame
 import pygame
-from circleshape import CircleShape
-from constants import SHOT_RADIUS, SCREEN_WIDTH, SCREEN_HEIGHT, LINE_WIDTH
+from .circleshape import CircleShape
+from .constants import SHOT_RADIUS, SCREEN_WIDTH, SCREEN_HEIGHT, LINE_WIDTH
 
 
 # ============================================================================

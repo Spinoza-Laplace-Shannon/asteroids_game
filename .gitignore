@@ -1,16 +1,54 @@
-# Python-generated files
+# Python
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
 wheels/
-*.egg-info
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
 # Virtual environments
-.venv
+.venv/
+venv/
+ENV/
+env/
+.env
 
-# snapshot of your game state about once per second
-game_state.jsonl
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
 
-#collision logs
-game_events.jsonl
+# Project specific
+data/*.json
+*.jsonl
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Build tools
+uv.lock
+.python-version

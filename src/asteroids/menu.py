@@ -1,7 +1,8 @@
 import pygame
 import os
 import json
-from constants import (
+from pathlib import Path
+from .constants import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     DIFFICULTIES,
@@ -9,6 +10,12 @@ from constants import (
     SOUND_VOLUME_MENU_NAV,
 )
 import math
+
+
+# Path to data directory for saving high scores
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+HIGH_SCORE_FILE = DATA_DIR / "high_score.json"
 
 
 class Menu:
@@ -46,8 +53,8 @@ class Menu:
     def load_high_score(self):
         """Load high score from file"""
         try:
-            if os.path.exists("high_score.json"):
-                with open("high_score.json", "r") as f:
+            if HIGH_SCORE_FILE.exists():
+                with open(HIGH_SCORE_FILE, "r") as f:
                     data = json.load(f)
                     return data.get("score", 0)
         except:
@@ -57,7 +64,9 @@ class Menu:
     def save_high_score(self, score):
         """Save high score to file"""
         try:
-            with open("high_score.json", "w") as f:
+            # Ensure data directory exists
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            with open(HIGH_SCORE_FILE, "w") as f:
                 json.dump({"score": score}, f)
             self.high_score = score
         except:
