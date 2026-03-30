@@ -13,6 +13,17 @@ def main():
     print(f"Screen width: {SCREEN_WIDTH} \nScreen height: {SCREEN_HEIGHT}")
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    # Load background image (optional)
+    background = None
+    try:
+        background = pygame.image.load(
+            "/Users/u/workspace/bootdotdev/curriculum/asteroids_game/Background images/5446991.jpg"
+        ).convert()
+        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except Exception:
+        background = None
+
     clock = pygame.time.Clock()
     dt = 0
 
@@ -50,7 +61,10 @@ def main():
 
         dt = clock.tick(60) / 1000
 
-        screen.fill("black")
+        if background:
+            screen.blit(background, (0, 0))
+        else:
+            screen.fill("black")
 
         # Draw HUD
         score_text = font.render(f"Score: {score}", True, pygame.Color("white"))
@@ -59,15 +73,37 @@ def main():
         lives_text = font.render(f"Lives: {lives}", True, pygame.Color("white"))
         screen.blit(lives_text, (10, 40))
 
+        weapon_text = font.render(
+            f"Weapon: {player.weapon}", True, pygame.Color("white")
+        )
+        screen.blit(weapon_text, (10, 70))
+
+        weapon_color = pygame.Color("white")
+        if player.weapon == WEAPON_SINGLE:
+            weapon_color = pygame.Color(*WEAPON_COLOR_SINGLE)
+        elif player.weapon == WEAPON_SPREAD:
+            weapon_color = pygame.Color(*WEAPON_COLOR_SPREAD)
+        elif player.weapon == WEAPON_RAPID:
+            weapon_color = pygame.Color(*WEAPON_COLOR_RAPID)
+
+        pygame.draw.circle(screen, weapon_color, (200, 80), 6)
+
         if invulnerable_timer > 0:
             invul_text = font.render("INVULNERABLE", True, pygame.Color("yellow"))
-            screen.blit(invul_text, (10, 70))
+            screen.blit(invul_text, (10, 100))
 
         if respawn_timer > 0:
             respawn_text = font.render(
                 f"RESPAWNING... {respawn_timer:.1f}s", True, pygame.Color("cyan")
             )
             screen.blit(respawn_text, (10, 100))
+
+        help_text = font.render(
+            "Press 1=Single 2=Spread 3=Rapid, Space=Fire",
+            True,
+            pygame.Color("lightgray"),
+        )
+        screen.blit(help_text, (10, SCREEN_HEIGHT - 30))
 
         for object in drawable:
             if isinstance(object, Player) and not player.active:

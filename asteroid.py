@@ -10,15 +10,44 @@ from circleshape import CircleShape
 class Asteroid(CircleShape):
     def __init__(self, x, y, radius):
         super().__init__(x, y, radius)
+        self.vertex_count = random.randint(8, 14)
+        self.jaggedness = 0.35
+        self.offsets = [
+            random.uniform(1 - self.jaggedness, 1 + self.jaggedness)
+            for _ in range(self.vertex_count)
+        ]
+        self.outline_width = random.randint(1, 4)
+        self.color_inner = (120, 120, 120)
+        self.color_outer = (200, 200, 200)
 
     def draw(self, screen):
-        pygame.draw.circle(
-            screen,
-            "white",
-            (self.position.x, self.position.y),
-            self.radius,
-            LINE_WIDTH,
-        )
+        points = []
+        for i, offset in enumerate(self.offsets):
+            angle = (360 / self.vertex_count) * i
+            direction = pygame.Vector2(0, -1).rotate(angle)
+            distance = self.radius * offset
+            points.append(
+                (
+                    self.position.x + direction.x * distance,
+                    self.position.y + direction.y * distance,
+                )
+            )
+
+        # inner fill
+        pygame.draw.polygon(screen, self.color_inner, points)
+
+        # second fill overlay for depth with translucency using surface
+        surface = pygame.Surface((self.radius * 2 + 4, self.radius * 2 + 4), pygame.SRCALPHA)
+        offset_points = [
+            (p[0] - self.position.x + self.radius + 2, p[1] - self.position.y + self.radius + 2)
+            for p in points
+        ]
+        pygame.draw.polygon(surface, (*self.color_outer, 120), offset_points)
+        screen.blit(surface, (self.position.x - self.radius - 2, self.position.y - self.radius - 2))
+
+        # outline
+        outline_color = (255, 255, 255)
+        pygame.draw.polygon(screen, outline_color, points, self.outline_width)
 
     def split(self):
         # This asteroid is destroyed immediately
@@ -48,6 +77,7 @@ class Asteroid(CircleShape):
     def update(self, dt):
         # move in a straight line at constant velocity
         self.position += self.velocity * dt
+        self.wrap()
 
 
 class Explosion(CircleShape):

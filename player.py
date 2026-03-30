@@ -9,6 +9,12 @@ from constants import (
     PLAYER_MAX_SPEED,
     PLAYER_SHOOT_SPEED,
     PLAYER_SHOOT_COOLDOWN_SECONDS,
+    WEAPON_SINGLE,
+    WEAPON_SPREAD,
+    WEAPON_RAPID,
+    WEAPON_COLOR_SINGLE,
+    WEAPON_COLOR_SPREAD,
+    WEAPON_COLOR_RAPID,
 )
 from circleshape import CircleShape
 from shot import Shot
@@ -23,6 +29,7 @@ class Player(CircleShape):
         self.velocity = pygame.Vector2(0, 0)
         self.acceleration = pygame.Vector2(0, 0)
         self.active = True
+        self.weapon = WEAPON_SINGLE
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -73,9 +80,18 @@ class Player(CircleShape):
             self.velocity.scale_to_length(PLAYER_MAX_SPEED)
 
         self.position += self.velocity * dt
+        self.wrap()
 
         # Decrease the shoot cooldown timer each frame.
         self.shot_cooldown_timer = max(0, self.shot_cooldown_timer - dt)
+
+        # Weapon selection
+        if keys[pygame.K_1]:
+            self.weapon = WEAPON_SINGLE
+        elif keys[pygame.K_2]:
+            self.weapon = WEAPON_SPREAD
+        elif keys[pygame.K_3]:
+            self.weapon = WEAPON_RAPID
 
         if keys[pygame.K_SPACE]:
             self.shoot()
@@ -91,13 +107,23 @@ class Player(CircleShape):
         if self.shot_cooldown_timer > 0:
             return None
 
-        # Start cooldown timer.
-        self.shot_cooldown_timer = PLAYER_SHOOT_COOLDOWN_SECONDS
+        unit_vector = pygame.Vector2(0, 1).rotate(self.rotation)
 
-        # the shot should start at the tip of the triangle, which is the forward direction of the player
-        unit_vector = pygame.Vector2(0, 1)
-        # rotate the unit vector by the player's rotation (in the direction the player is facing) to get direction
-        rotated_vector = unit_vector.rotate(self.rotation)
-        # Scale it up (multiply by PLAYER_SHOOT_SPEED) to make it move faster than the player
-        shot_velocity = rotated_vector * PLAYER_SHOOT_SPEED
-        return Shot(self.position, shot_velocity)
+        if self.weapon == WEAPON_SPREAD:
+            self.shot_cooldown_timer = 0.8
+            angles = [-15, 0, 15]
+            for angle in angles:
+                shot_velocity = unit_vector.rotate(angle) * (PLAYER_SHOOT_SPEED * 0.9)
+                Shot(self.position, shot_velocity, WEAPON_COLOR_SPREAD)
+            return None
+
+        if self.weapon == WEAPON_RAPID:
+            self.shot_cooldown_timer = 0.15
+            shot_velocity = unit_vector * (PLAYER_SHOOT_SPEED * 1.4)
+            Shot(self.position, shot_velocity, WEAPON_COLOR_RAPID)
+            return None
+
+        # Default single shot
+        self.shot_cooldown_timer = PLAYER_SHOOT_COOLDOWN_SECONDS
+        shot_velocity = unit_vector * PLAYER_SHOOT_SPEED
+        return Shot(self.position, shot_velocity, WEAPON_COLOR_SINGLE)
