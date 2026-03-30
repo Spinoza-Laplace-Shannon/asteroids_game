@@ -102,6 +102,39 @@ class Player(CircleShape):
         rotated_with_speed_vector = rotated_vector * PLAYER_SPEED * dt
         self.position += rotated_with_speed_vector
 
+    def __point_line_distance(self, point, a, b):
+        ap = point - a
+        ab = b - a
+        t = max(0, min(1, ap.dot(ab) / ab.length_squared()))
+        closest = a + ab * t
+        return point.distance_to(closest)
+
+    def __point_in_triangle(self, pt, v1, v2, v3):
+        d1 = (pt.x - v2.x) * (v1.y - v2.y) - (v1.x - v2.x) * (pt.y - v2.y)
+        d2 = (pt.x - v3.x) * (v2.y - v3.y) - (v2.x - v3.x) * (pt.y - v3.y)
+        d3 = (pt.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (pt.y - v1.y)
+        has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+        has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+        return not (has_neg and has_pos)
+
+    def collides_with(self, other):
+        # triangular hitbox for player
+        if isinstance(other, CircleShape):
+            tri = self.triangle()
+            # check if circle center is inside triangle
+            if self.__point_in_triangle(other.position, pygame.Vector2(tri[0]), pygame.Vector2(tri[1]), pygame.Vector2(tri[2])):
+                return True
+
+            # edge-to-circle collision
+            for i in range(len(tri)):
+                a = pygame.Vector2(tri[i])
+                b = pygame.Vector2(tri[(i + 1) % len(tri)])
+                if self.__point_line_distance(other.position, a, b) <= other.radius:
+                    return True
+            return False
+
+        return super().collides_with(other)
+
     def shoot(self):
         # If the cooldown is still active, do not shoot.
         if self.shot_cooldown_timer > 0:
