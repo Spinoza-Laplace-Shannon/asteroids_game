@@ -17,6 +17,8 @@ class Player(CircleShape):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.shot_cooldown_timer = 0
+        self.velocity = pygame.Vector2(0, 0)
+        self.acceleration = pygame.Vector2(0, 0)
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -36,21 +38,34 @@ class Player(CircleShape):
     def update(self, dt):
         keys = pygame.key.get_pressed()
 
+        # Rotation
         if keys[pygame.K_a]:
-            dt *= -1
-            self.rotate(dt)
+            self.rotate(-dt)
         if keys[pygame.K_d]:
             self.rotate(dt)
+
+        # Thrust
+        thrust_vector = pygame.Vector2(0, 0)
         if keys[pygame.K_w]:
-            dt *= -1
-            self.move(dt)
+            thrust_vector = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_ACCELERATION
         if keys[pygame.K_s]:
-            self.move(dt)
+            thrust_vector = pygame.Vector2(0, -1).rotate(self.rotation) * PLAYER_ACCELERATION
+
+        self.acceleration = thrust_vector
+        self.velocity += self.acceleration * dt
+
+        # Apply friction and max speed
+        if self.acceleration.length_squared() == 0:
+            self.velocity *= PLAYER_FRICTION
+
+        if self.velocity.length() > PLAYER_MAX_SPEED:
+            self.velocity.scale_to_length(PLAYER_MAX_SPEED)
+
+        self.position += self.velocity * dt
 
         # Decrease the shoot cooldown timer each frame.
         self.shot_cooldown_timer = max(0, self.shot_cooldown_timer - dt)
 
-        # If the shooting key is down, attempt to shoot.
         if keys[pygame.K_SPACE]:
             self.shoot()
 

@@ -48,3 +48,34 @@ class Asteroid(CircleShape):
     def update(self, dt):
         # move in a straight line at constant velocity
         self.position += self.velocity * dt
+
+
+class Explosion(CircleShape):
+    def __init__(self, x, y):
+        super().__init__(x, y, 0)
+        self.life = 0.5
+        self.growth_rate = 240
+
+    def update(self, dt):
+        self.life -= dt
+        self.radius += self.growth_rate * dt
+        if self.life <= 0:
+            self.kill()
+
+    def draw(self, screen):
+        alpha = max(0, int(255 * (self.life / 0.5)))
+        color = (255, 180, 0)
+        surface = pygame.Surface(
+            (self.radius * 2 + 2, self.radius * 2 + 2), pygame.SRCALPHA
+        )
+        pygame.draw.circle(
+            surface,
+            color + (alpha,),
+            (int(self.radius + 1), int(self.radius + 1)),
+            int(self.radius),
+            2,
+        )
+        screen.blit(
+            surface,
+            (self.position.x - self.radius - 1, self.position.y - self.radius - 1),
+        )

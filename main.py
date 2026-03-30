@@ -2,7 +2,7 @@ import pygame
 from constants import *
 from logger import log_state, log_event
 from player import *
-from asteroid import Asteroid
+from asteroid import Asteroid, Explosion
 from asteroidfield import AsteroidField
 from sys import exit
 from shot import Shot
@@ -20,6 +20,8 @@ def main():
     y = SCREEN_HEIGHT / 2
 
     score = 0
+    lives = PLAYER_LIVES
+    invulnerable_timer = 0
     font = pygame.font.Font(None, 30)
 
     # Groups:
@@ -32,6 +34,7 @@ def main():
     Asteroid.containers = (asteroids, updatable, drawable)
     AsteroidField.containers = updatable
     Shot.containers = (shots, updatable, drawable)
+    Explosion.containers = (updatable, drawable)
 
     asteroid_field = AsteroidField()
 
@@ -52,26 +55,53 @@ def main():
         score_text = font.render(f"Score: {score}", True, pygame.Color("white"))
         screen.blit(score_text, (10, 10))
 
+        lives_text = font.render(f"Lives: {lives}", True, pygame.Color("white"))
+        screen.blit(lives_text, (10, 40))
+
+        if invulnerable_timer > 0:
+            invul_text = font.render("INVULNERABLE", True, pygame.Color("yellow"))
+            screen.blit(invul_text, (10, 70))
+
         for object in drawable:
             object.draw(screen)
         for object in updatable:
             object.update(dt)
-        for asteroid in list(asteroids):
-            if player.collides_with(asteroid):
-                log_event(
-                    "player_hit",
-                    player_pos=[
-                        round(player.position.x, 2),
-                        round(player.position.y, 2),
-                    ],
-                    asteroid_pos=[
-                        round(asteroid.position.x, 2),
-                        round(asteroid.position.y, 2),
-                    ],
-                )
+        if invulnerable_timer <= 0:
+            for asteroid in list(asteroids):
+                if player.collides_with(asteroid):
+                    lives -= 1
+                    log_event(
+                        "player_hit",
+                        lives=lives,
+                        player_pos=[
+                            round(player.position.x, 2),
+                            round(player.position.y, 2),
+                        ],
+                        asteroid_pos=[
+                            round(asteroid.position.x, 2),
+                            round(asteroid.position.y, 2),
+                        ],
+                    )
 
-                print("Game over!")
-                exit()
+                    if lives <= 0:
+                        print("Game over!")
+                        exit()
+
+                    # Respawn player in center and reset velocity
+                    player.position = pygame.Vector2(
+                        SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2
+                    )
+                    player.rotation = 0
+                    player.velocity = pygame.Vector2(0, 0)
+                    invulnerable_timer = PLAYER_RESPAWN_INVULNERABLE_SECONDS
+
+                    # Remove active shots to avoid instant death on respawn
+                    for shot in list(shots):
+                        shot.kill()
+                    break
+
+        if invulnerable_timer > 0:
+            invulnerable_timer = max(0, invulnerable_timer - dt)
 
         for asteroid in list(asteroids):
             for shot in list(shots):
@@ -91,6 +121,9 @@ def main():
                         score=score,
                         asteroid_radius=asteroid.radius,
                     )
+
+                    # Add explosion effect when asteroid is hit
+                    Explosion(asteroid.position.x, asteroid.position.y)
 
                     shot.kill()
                     asteroid.split()
